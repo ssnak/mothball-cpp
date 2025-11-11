@@ -15,6 +15,12 @@ inline std::array<float, 65536> makeSinTable() {
     }
     return table;
 }
+struct Args {
+    std::optional<float> rotation;
+    std::optional<float> slipperiness;
+    std::optional<int> speed;
+    std::optional<int> slow;
+};
 
 class Player {
    private:
@@ -90,9 +96,9 @@ class Player {
         }
         playerCopy.inputs = "";
         if (isSneaking) {
-            playerCopy.sneaksprintjump(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+            playerCopy.sneaksprintjump(1, Args{});
         } else {
-            playerCopy.sprintjump(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+            playerCopy.sprintjump(1, Args{});
         }
         return std::fabs(180.0 * std::atan2(playerCopy.velocity.x, playerCopy.velocity.z) / PI);
     }
@@ -101,262 +107,252 @@ class Player {
 
     float mccos(float radians) { return SIN_TABLE[static_cast<int>(radians * 10430.378f + 16384.0f) & 0xffff]; }
 
-    void walk(int duration, std::optional<float> rotation, std::optional<float> slipperiness, std::optional<int> speed,
-              std::optional<int> slow) {
-        this->move(duration, rotation, 0.0f, slipperiness, false, false, speed, slow, State::GROUNDED);
-    }
-
-    void walk45(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                std::optional<int> speed, std::optional<int> slow) {
-        this->move(duration, rotation, 45.0f, slipperiness, false, false, speed, slow, State::GROUNDED);
-    }
-
-    void sprint(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                std::optional<int> speed, std::optional<int> slow) {
-        this->move(duration, rotation, 0.0f, slipperiness, true, false, speed, slow, State::GROUNDED);
-    }
-
-    void sprint45(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                  std::optional<int> speed, std::optional<int> slow) {
-        this->move(duration, rotation, 45.0f, slipperiness, true, false, speed, slow, State::GROUNDED);
-    }
-
-    void walkair(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 45.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
-    }
-
-    void walkair45(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 45.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
-    }
-
-    void sprintair(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 45.0f, 1.0, true, false, std::nullopt, std::nullopt, State::AIRBORNE);
-    }
-
-    void sprintair45(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 45.0f, 1.0f, true, false, std::nullopt, std::nullopt, State::AIRBORNE);
-    }
-
-    void walkjump(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                  std::optional<int> speed, std::optional<int> slow) {
-        if (duration > 0) {
-            this->move(1, rotation, 45.0f, slipperiness, false, false, speed, slow, State::JUMPING);
-            this->walkair(duration - 1, rotation);
-        }
-    }
-
-    void walkjump45(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                    std::optional<int> speed, std::optional<int> slow) {
-        if (duration > 0) {
-            this->move(1, rotation, 45.0f, slipperiness, false, false, speed, slow, State::JUMPING);
-            this->walkair45(duration - 1, rotation);
-        }
-    }
-
-    void walkpessi(int duration, int delay, std::optional<float> rotation, std::optional<float> slipperiness) {
-        if (delay == 0) {
-            this->walkjump(duration, rotation, slipperiness, std::nullopt, std::nullopt);
-        } else if (duration > 0) {
-            if (delay > duration) {
-                delay = duration;
-            }
-            std::string input = this->inputs;
-            this->inputs = "";
-            this->stopjump(delay, slipperiness);
-            this->inputs = input;
-            this->walkair(duration - delay, rotation);
-        }
-    }
-
-    void walkpessi45(int duration, int delay, std::optional<float> rotation, std::optional<float> slipperiness) {
-        if (delay == 0) {
-            this->walkjump45(duration, rotation, slipperiness, std::nullopt, std::nullopt);
-        } else if (duration > 0) {
-            if (delay > duration) {
-                delay = duration;
-            }
-            std::string input = this->inputs;
-            this->inputs = "";
-            this->stopjump(delay, slipperiness);
-            this->inputs = input;
-            this->walkair45(duration - delay, rotation);
-        }
-    }
-
-    void sprintjump(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                    std::optional<int> speed, std::optional<int> slow) {
-        if (duration > 0) {
-            this->move(1, rotation, 0.0f, slipperiness, true, false, speed, slow, State::JUMPING);
-            this->sprintair(duration - 1, rotation);
-        }
-    }
-
-    void sprintjump45(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                      std::optional<int> speed, std::optional<int> slow) {
-        if (duration > 0) {
-            this->move(1, rotation, 0.0f, slipperiness, true, false, speed, slow, State::JUMPING);
-            this->sprintair45(duration - 1, rotation);
-        }
-    }
-
-    void sprintstrafejump(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                          std::optional<int> speed, std::optional<int> slow) {
-        if (duration > 0) {
-            this->inputs = "wa";
-            this->move(1, rotation, this->getOptimalStrafeJumpAngle(speed, slow, slipperiness, false), slipperiness,
-                       true, false, speed, slow,
-                       State::JUMPING);  // TODO: This again
-            this->inputs = "w";
-            this->sprintair(duration - 1, rotation);
-        }
-    }
-    void sprintstrafejump45(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                            std::optional<int> speed, std::optional<int> slow) {
-        if (duration > 0) {
-            this->inputs = "wa";
-            this->move(1, rotation, this->getOptimalStrafeJumpAngle(speed, slow, slipperiness, false), slipperiness,
-                       true, false, speed, slow,
-                       State::JUMPING);  // TODO: Check what boolean is for and
-                                         // getOptimalStrafeJumpAngle implementation
-            this->sprintair45(duration - 1, rotation);
-        }
-    }
-    void sprintpessi(int duration, int delay, std::optional<float> rotation, std::optional<float> slipperiness) {
-        if (delay == 0) {
-            this->sprintjump(duration, rotation, slipperiness, std::nullopt, std::nullopt);
-        } else if (duration > 0) {
-            if (delay > duration) {
-                delay = duration;
-            }
-            std::string input = this->inputs;
-            this->inputs = "";
-            this->stopjump(delay, slipperiness);
-            this->inputs = input;
-            this->sprintair(duration - delay, rotation);
-        }
-    }
-    void sprintpessi45(int duration, int delay, std::optional<float> rotation, std::optional<float> slipperiness) {
-        if (delay == 0) {
-            this->sprintjump(duration, rotation, slipperiness, std::nullopt, std::nullopt);
-        } else if (duration > 0) {
-            if (delay > duration) {
-                delay = duration;
-            }
-            std::string input = this->inputs;
-            this->inputs = "";
-            this->stopjump(delay, slipperiness);
-            this->inputs = input;
-            this->sprintair45(duration - delay, rotation);
-        }
-    }
-    void forcemomentum(int duration, int delay, std::optional<float> rotation, std::optional<float> slipperiness,
-                       std::optional<int> speed, std::optional<int> slow) {
-        if (delay < 0) {
-            return;  // raise error;
-        } else if (duration > 0) {
-            if (delay == 0) this->sprintjump(duration, rotation, slipperiness, speed, slow);
-        } else {
-            if (delay > duration)  // example: fmm(12,15) is just wj(12);
-                delay = duration;
-        }
-        this->walkjump(delay, rotation, slipperiness, speed, slow);
-        this->sprintair(duration - delay, rotation);
-    }
-    void forcemomentum45(int duration, int delay, std::optional<float> rotation, std::optional<float> slipperiness,
-                         std::optional<int> speed, std::optional<int> slow) {
-        if (delay < 0) {
-            return;  // raise error;
-        } else if (duration > 0) {
-            if (delay == 0) this->sprintjump45(duration, rotation, slipperiness, speed, slow);
-        } else {
-            if (delay > duration)  // example: fmm(12,15) is just wj(12);
-                delay = duration;
-        }
-        this->walkjump45(delay, rotation, slipperiness, speed, slow);
-        this->sprintair45(duration - delay, rotation);
-    }
-    void sneak(int duration, std::optional<float> rotation, std::optional<float> slipperiness, std::optional<int> speed,
-               std::optional<int> slow) {
-        this->move(duration, rotation, 0.0f, slipperiness, false, true, speed, slow, State::GROUNDED);
-    }
-    void sneak45(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                 std::optional<int> speed, std::optional<int> slow) {
-        this->move(duration, rotation, 45.0f, slipperiness, false, true, speed, slow, State::GROUNDED);
-    }
-    void sneakair(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 0.0f, 1.0f, false, true, std::nullopt, std::nullopt, State::AIRBORNE);
-    }
-    void sneakair45(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 45.0f, 1.0f, false, true, std::nullopt, std::nullopt, State::AIRBORNE);
-    }
-    void sneakjump(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                   std::optional<int> speed, std::optional<int> slow) {
-        if (duration > 0) {
-            this->move(1, rotation, 0.0f, slipperiness, false, true, speed, slow, State::JUMPING);
-            this->sneakair(duration - 1, rotation);
-        }
-    }
-    void sneakjump45(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                     std::optional<int> speed, std::optional<int> slow) {
-        if (duration > 0) {
-            this->move(1, rotation, 45.0f, slipperiness, false, true, speed, slow, State::JUMPING);
-            this->sneakair45(duration - 1, rotation);
-        }
-    }
-    void stop(int duration, std::optional<float> slipperiness) {
-        this->move(duration, std::nullopt, 0.0f, slipperiness, false, false, std::nullopt, std::nullopt,
+    void walk(int duration, Args args) {
+        this->move(duration, args.rotation, 0.0f, args.slipperiness, false, false, args.speed, args.slow,
                    State::GROUNDED);
     }
-    void stopair(int duration) {
+
+    void walk45(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, args.slipperiness, false, false, args.speed, args.slow,
+                   State::GROUNDED);
+    }
+
+    void sprint(int duration, Args args) {
+        this->move(duration, args.rotation, 0.0f, args.slipperiness, true, false, args.speed, args.slow,
+                   State::GROUNDED);
+    }
+
+    void sprint45(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, args.slipperiness, true, false, args.speed, args.slow,
+                   State::GROUNDED);
+    }
+
+    void walkair(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
+    }
+
+    void walkair45(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
+    }
+
+    void sprintair(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, 1.0, true, false, std::nullopt, std::nullopt, State::AIRBORNE);
+    }
+
+    void sprintair45(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, 1.0f, true, false, std::nullopt, std::nullopt, State::AIRBORNE);
+    }
+
+    void walkjump(int duration, Args args) {
+        if (duration > 0) {
+            this->move(1, args.rotation, 45.0f, args.slipperiness, false, false, args.speed, args.slow, State::JUMPING);
+            this->walkair(duration - 1, args);
+        }
+    }
+
+    void walkjump45(int duration, Args args) {
+        if (duration > 0) {
+            this->move(1, args.rotation, 45.0f, args.slipperiness, false, false, args.speed, args.slow, State::JUMPING);
+            this->walkair45(duration - 1, args);
+        }
+    }
+
+    void walkpessi(int duration, int delay, Args args) {
+        if (delay == 0) {
+            this->walkjump(duration, args);
+        } else if (duration > 0) {
+            if (delay > duration) {
+                delay = duration;
+            }
+            std::string input = this->inputs;
+            this->inputs = "";
+            this->stopjump(delay, args);
+            this->inputs = input;
+            this->walkair(duration - delay, args);
+        }
+    }
+
+    void walkpessi45(int duration, int delay, Args args) {
+        if (delay == 0) {
+            this->walkjump45(duration, args);
+        } else if (duration > 0) {
+            if (delay > duration) {
+                delay = duration;
+            }
+            std::string input = this->inputs;
+            this->inputs = "";
+            this->stopjump(delay, args);
+            this->inputs = input;
+            this->walkair45(duration - delay, args);
+        }
+    }
+
+    void sprintjump(int duration, Args args) {
+        if (duration > 0) {
+            this->move(1, args.rotation, 0.0f, args.slipperiness, true, false, args.speed, args.slow, State::JUMPING);
+            this->sprintair(duration - 1, args);
+        }
+    }
+
+    void sprintjump45(int duration, Args args) {
+        if (duration > 0) {
+            this->move(1, args.rotation, 0.0f, args.slipperiness, true, false, args.speed, args.slow, State::JUMPING);
+            this->sprintair45(duration - 1, args);
+        }
+    }
+
+    void sprintstrafejump(int duration, Args args) {
+        if (duration > 0) {
+            this->inputs = "wa";
+            this->move(1, args.rotation,
+                       this->getOptimalStrafeJumpAngle(args.speed, args.slow, args.slipperiness, false),
+                       args.slipperiness, true, false, args.speed, args.slow, State::JUMPING);
+            this->inputs = "w";
+            this->sprintair(duration - 1, args);
+        }
+    }
+    void sprintstrafejump45(int duration, Args args) {
+        if (duration > 0) {
+            this->inputs = "wa";
+            this->move(1, args.rotation,
+                       this->getOptimalStrafeJumpAngle(args.speed, args.slow, args.slipperiness, false),
+                       args.slipperiness, true, false, args.speed, args.slow, State::JUMPING);
+            this->sprintair45(duration - 1, args);
+        }
+    }
+    void sprintpessi(int duration, int delay, Args args) {
+        if (delay == 0) {
+            this->sprintjump(duration, args);
+        } else if (duration > 0) {
+            if (delay > duration) {
+                delay = duration;
+            }
+            std::string input = this->inputs;
+            this->inputs = "";
+            this->stopjump(delay, args);
+            this->inputs = input;
+            this->sprintair(duration - delay, args);
+        }
+    }
+    void sprintpessi45(int duration, int delay, Args args) {
+        if (delay == 0) {
+            this->sprintjump(duration, args);
+        } else if (duration > 0) {
+            if (delay > duration) {
+                delay = duration;
+            }
+            std::string input = this->inputs;
+            this->inputs = "";
+            this->stopjump(delay, args);
+            this->inputs = input;
+            this->sprintair45(duration - delay, args);
+        }
+    }
+    void forcemomentum(int duration, int delay, Args args) {
+        if (delay < 0) {
+            return;  // raise error;
+        } else if (duration > 0) {
+            if (delay == 0) this->sprintjump(duration, args);
+        } else {
+            if (delay > duration)  // example: fmm(12,15) is just wj(12);
+                delay = duration;
+        }
+        this->walkjump(delay, args);
+        this->sprintair(duration - delay, args);
+    }
+    void forcemomentum45(int duration, int delay, Args args) {
+        if (delay < 0) {
+            return;  // raise error;
+        } else if (duration > 0) {
+            if (delay == 0) this->sprintjump45(duration, args);
+        } else {
+            if (delay > duration)  // example: fmm(12,15) is just wj(12);
+                delay = duration;
+        }
+        this->walkjump45(delay, args);
+        this->sprintair45(duration - delay, args);
+    }
+    void sneak(int duration, Args args) {
+        this->move(duration, args.rotation, 0.0f, args.slipperiness, false, true, args.speed, args.slow,
+                   State::GROUNDED);
+    }
+    void sneak45(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, args.slipperiness, false, true, args.speed, args.slow,
+                   State::GROUNDED);
+    }
+    void sneakair(int duration, Args args) {
+        this->move(duration, args.rotation, 0.0f, 1.0f, false, true, std::nullopt, std::nullopt, State::AIRBORNE);
+    }
+    void sneakair45(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, 1.0f, false, true, std::nullopt, std::nullopt, State::AIRBORNE);
+    }
+    void sneakjump(int duration, Args args) {
+        if (duration > 0) {
+            this->move(1, args.rotation, 0.0f, args.slipperiness, false, true, args.speed, args.slow, State::JUMPING);
+            this->sneakair(duration - 1, args);
+        }
+    }
+    void sneakjump45(int duration, Args args) {
+        if (duration > 0) {
+            this->move(1, args.rotation, 45.0f, args.slipperiness, false, true, args.speed, args.slow, State::JUMPING);
+            this->sneakair45(duration - 1, args);
+        }
+    }
+    void stop(int duration, Args args) {
+        this->move(duration, std::nullopt, 0.0f, args.slipperiness, false, false, std::nullopt, std::nullopt,
+                   State::GROUNDED);
+    }
+    void stopair(int duration, Args _) {
         this->move(duration, std::nullopt, 0.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
     }
-    void stopjump(int duration, std::optional<float> slipperiness) {
+    void stopjump(int duration, Args args) {
         if (duration > 0) {
-            this->move(1, std::nullopt, 0.0f, slipperiness, false, false, std::nullopt, std::nullopt, State::JUMPING);
-            this->stopair(duration - 1);
+            this->move(1, std::nullopt, 0.0f, args.slipperiness, false, false, std::nullopt, std::nullopt,
+                       State::JUMPING);
+            this->stopair(duration - 1, args);
         }
     }
-    void sneakstop(int duration, std::optional<float> slipperiness) {
-        this->move(duration, std::nullopt, 0.0f, slipperiness, false, true, std::nullopt, std::nullopt,
+    void sneakstop(int duration, Args args) {
+        this->move(duration, std::nullopt, 0.0f, args.slipperiness, false, true, std::nullopt, std::nullopt,
                    State::GROUNDED);
     }
-    void sneakstopair(int duration) {
+    void sneakstopair(int duration, Args _) {
         this->move(duration, std::nullopt, 0.0f, 1.0f, false, true, std::nullopt, std::nullopt, State::AIRBORNE);
     }
-    void sneakstopjump(int duration, std::optional<float> slipperiness) {
+    void sneakstopjump(int duration, Args args) {
         if (duration > 0) {
-            this->move(1, std::nullopt, 0.0f, slipperiness, false, true, std::nullopt, std::nullopt, State::JUMPING);
-            this->stopair(duration - 1);
+            this->move(1, std::nullopt, 0.0f, args.slipperiness, false, true, std::nullopt, std::nullopt,
+                       State::JUMPING);
+            this->stopair(duration - 1, args);
         }
     }
-    void sneaksprint(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                     std::optional<int> speed, std::optional<int> slow) {
-        this->move(duration, rotation, 0.0f, slipperiness, true, true, speed, slow, State::GROUNDED);
+    void sneaksprint(int duration, Args args) {
+        this->move(duration, args.rotation, 0.0f, args.slipperiness, true, true, args.speed, args.slow,
+                   State::GROUNDED);
     }
-    void sneaksprint45(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                       std::optional<int> speed, std::optional<int> slow) {
-        this->move(duration, rotation, 45.0f, slipperiness, true, true, speed, slow, State::GROUNDED);
+    void sneaksprint45(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, args.slipperiness, true, true, args.speed, args.slow,
+                   State::GROUNDED);
     }
-    void sneaksprintair(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 0.0f, 1.0f, true, true, std::nullopt, std::nullopt, State::AIRBORNE);
+    void sneaksprintair(int duration, Args args) {
+        this->move(duration, args.rotation, 0.0f, 1.0f, true, true, std::nullopt, std::nullopt, State::AIRBORNE);
     }
-    void sneaksprintair45(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 45.0f, 1.0f, true, true, std::nullopt, std::nullopt, State::AIRBORNE);
+    void sneaksprintair45(int duration, Args args) {
+        this->move(duration, args.rotation, 45.0f, 1.0f, true, true, std::nullopt, std::nullopt, State::AIRBORNE);
     }
-    void sneaksprintjump(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                         std::optional<int> speed, std::optional<int> slow) {
+    void sneaksprintjump(int duration, Args args) {
         if (duration > 0) {
-            this->move(1, rotation, 0.0f, slipperiness, true, true, speed, slow, State::JUMPING);
-            this->sneaksprintair(duration - 1, rotation);
+            this->move(1, args.rotation, 0.0f, args.slipperiness, true, true, args.speed, args.slow, State::JUMPING);
+            this->sneaksprintair(duration - 1, args);
         }
     }
-    void sneaksprintjump45(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
-                           std::optional<int> speed, std::optional<int> slow) {
+    void sneaksprintjump45(int duration, Args args) {
         if (duration > 0) {
             this->inputs = "wa";
-            this->move(1, rotation, this->getOptimalStrafeJumpAngle(speed, slow, slipperiness, true), slipperiness,
-                       true, true, speed, slow, State::JUMPING);
-            this->sneaksprintair45(duration - 1, rotation);
+            this->move(1, args.rotation,
+                       this->getOptimalStrafeJumpAngle(args.speed, args.slow, args.slipperiness, true),
+                       args.slipperiness, true, true, args.speed, args.slow, State::JUMPING);
+            this->sneaksprintair45(duration - 1, args);
         }
     }
 };
