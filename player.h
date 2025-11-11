@@ -72,32 +72,29 @@ class Player {
     }
     float getMovementMultiplier(float slipperiness, bool isSprinting, int16_t speed, int16_t slow);
     float getOptimalStrafeJumpAngle(std::optional<int> speed, std::optional<int> slow,
-                                    std::optional<float> slipperiness, bool dummyForNow) {
-        return 0.0f;
-    }
-
-    float mcsin(float rad) {
-        int index;
-        if (angles == -1) {
-            return std::sinf(rad);
-        } else if (angles == 65536) {
-            index = int(rad * 10430.378) & 65535;
-        } else {
-            index = int(1 / (2 * PI) * angles * rad) & (angles - 1);
+                                    std::optional<float> slipperiness, bool isSneaking) {
+        Player playerCopy = *this;
+        playerCopy.position.x = 0.0;
+        playerCopy.position.z = 0.0;
+        playerCopy.velocity.x = 0.0;
+        playerCopy.velocity.z = 0.0;
+        playerCopy.rotation = 0.0f;
+        if (speed.has_value()) {
+            playerCopy.speedEffect = speed.value();
         }
-        return std::sinf(index * PI * 2.0f / angles);
-    }
-
-    float mccos(float rad) {
-        int index;
-        if (angles == -1) {
-            return std::cosf(rad);
-        } else if (angles == 65536) {
-            index = int(rad * 10430.378 + 16384.0) & 65535;
-        } else {
-            index = int(1 / (2 * PI) * angles * rad + angles / 4) & (angles - 1);
+        if (slow.has_value()) {
+            playerCopy.slowEffect = slow.value();
         }
-        return std::sinf(index * PI * 2.0 / angles);
+        if (slipperiness.has_value()) {
+            playerCopy.defaultGroundSlipperiness = slipperiness.value();
+        }
+        playerCopy.inputs = "";
+        if (isSneaking) {
+            playerCopy.sneaksprintjump(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+        } else {
+            playerCopy.sprintjump(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+        }
+        return std::fabs(180.0 * std::atan2(playerCopy.velocity.x, playerCopy.velocity.z) / PI);
     }
 
     float mcsin(float radians) { return SIN_TABLE[static_cast<int>(radians * 10430.378f) & 0xffff]; }
