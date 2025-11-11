@@ -5,8 +5,20 @@
 
 #include "vector.h"
 
-#define PI 3.14159265358979323846
+constexpr double PI = 3.14159265358979323846;
+inline std::array<float, 65536> makeSinTable() {
+    std::array<float, 65536> table{};
+
+    for (size_t i = 0; i < table.size(); i++) {
+        table[i] = static_cast<float>(std::sin(PI * 2.0 * i / 65536.0));
+    }
+    return table;
+}
+
 class Player {
+   private:
+    inline static const std::array<float, 65536> SIN_TABLE = makeSinTable();
+
    public:
     enum class State { JUMPING, GROUNDED, AIRBORNE };
     Vector2<double> position = {0.0f, 0.0f};
@@ -87,6 +99,10 @@ class Player {
         }
         return std::sinf(index * PI * 2.0 / angles);
     }
+
+    float mcsin(float radians) { return SIN_TABLE[static_cast<int>(radians * 10430.378f) & 0xffff]; }
+
+    float mccos(float radians) { return SIN_TABLE[static_cast<int>(radians * 10430.378f + 16384.0f) & 0xffff]; }
 
     void walk(int duration, std::optional<float> rotation, std::optional<float> slipperiness, std::optional<int> speed,
               std::optional<int> slow) {
