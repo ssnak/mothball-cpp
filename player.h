@@ -1,3 +1,4 @@
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <optional>
@@ -24,7 +25,6 @@ class Player {
     Vector2<double> position = {0.0f, 0.0f};
     Vector2<double> velocity = {0.0f, 0.0f};
     float defaultGroundSlipperiness = 0.6f;
-    int angles = 65536;
     float rotation = 0.0f;
     float lastRotation = 0.0f;
     float lastTurn = 0.0f;
@@ -38,10 +38,10 @@ class Player {
     int16_t speedEffect = 0;
     int16_t slowEffect = 0;
     int modifiers = 0;
-    float sprintjumpBoost = 0.2f;
+    const float sprintjumpBoost = 0.2f;
+    const float inertiaThreshold = 0.005;
     bool reverse = false;
-    float inertiaThreshold = 0.005;
-    std::optional<float> previousSlipperiness = std::nullopt;
+    float previousSlipperiness = 0.6f;
     bool previouslySneaking = false;
     bool previouslyInWeb = false;
     bool previouslySprinting = false;

@@ -6,10 +6,19 @@
 
 void Player::move(int duration, std::optional<float> rotation, float rotationOffset, std::optional<float> slipperiness,
                   bool isSprinting, bool isSneaking, std::optional<int> speed, std::optional<int> slow, State state) {
+    slipperiness = slipperiness.value_or(this->defaultGroundSlipperiness);
+    speed = speed.value_or(this->speedEffect);
+    slow = slow.value_or(this->slowEffect);
+    bool overrideRotation = false;
+    if (rotation.has_value()) {
+        overrideRotation = true;
+        rotation = rotation.value() + rotationOffset;
+    }
+
     if (this->modifiers & (int)Modifiers::WATER) {
-        slipperiness = 0.8 / 0.91;
+        slipperiness = 0.8f / 0.91f;
     } else if (this->modifiers & (int)Modifiers::LAVA) {
-        slipperiness = 0.5 / 0.91;
+        slipperiness = 0.5f / 0.91f;
     }
 
     if (rotationOffset == 45) this->inputs = "wa";
@@ -19,10 +28,9 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
         this->modifiers & (int)Modifiers::LAVA)
         this->state = State::AIRBORNE;
 
-    bool overrideRotation = false;
-    if (rotation.has_value()) {
-        overrideRotation = true;
-        rotation = rotation.value() + rotationOffset;
+    float sprintjumpBoost = this->sprintjumpBoost;
+    if (this->reverse) {
+        sprintjumpBoost *= -1;
     }
 
     for (int i = 0; i < duration; i++) {
@@ -33,14 +41,7 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
 
         Vector2<float> direction = this->movementValues();
 
-        if (this->reverse) {
-            direction.scale(-1);
-            this->sprintjumpBoost *= -1;
-        }
-
-        if (!this->previousSlipperiness.has_value()) this->previousSlipperiness = this->defaultGroundSlipperiness;
-
-        this->velocity.scale(0.91 * this->previousSlipperiness.value());
+        this->velocity.scale(0.91 * this->previousSlipperiness);
 
         if (this->inertiaAxis == 1) {
             if (std::fabs(this->velocity.x) < this->inertiaThreshold || this->previouslyInWeb) this->velocity.x = 0.0f;
@@ -50,24 +51,20 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
         }
 
         if (this->state == State::JUMPING && isSprinting) {
-            // TODO: change that weird float
-            float facing = rotation.value() * 0.17453292f;
-            this->velocity.x -= this->mcsin(facing) * this->sprintjumpBoost;
-            this->velocity.x += this->mccos(facing) * this->sprintjumpBoost;
+            float facing = rotation.value() * 0.017453292f;
+            this->velocity.x -= double(this->mcsin(facing) * sprintjumpBoost);
+            this->velocity.x += double(this->mccos(facing) * sprintjumpBoost);
         }
 
         if (this->modifiers & (int)Modifiers::BLOCK) direction.scale(0.2f);
         if ((this->sneakDelay && this->previouslySneaking) || (!this->sneakDelay && isSneaking)) direction.scale(0.3f);
         direction.scale(0.98f);
 
-        float multiplier =
-            this->getMovementMultiplier(slipperiness.value_or(this->defaultGroundSlipperiness), isSprinting,
-                                        speed.value_or(this->speedEffect), slow.value_or(this->slowEffect));
-
+        float multiplier = this->getMovementMultiplier(slipperiness.value(), isSprinting, speed.value(), slow.value());
         float distance = direction.sqrMagnitude();
         if (distance > 0.0f) {
             distance = std::sqrtf(distance);
-            distance = std::min(distance, 1.0f);
+            distance = std::max(distance, 1.0f);
             distance = multiplier / distance;
             direction.scale(distance);
             float sinYaw = this->mcsin(rotation.value() * PI / 180.0f);
@@ -82,7 +79,7 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
             this->velocity.z = std::clamp(this->velocity.z, 0.15, -0.15);
         }
 
-        this->previousSlipperiness = slipperiness;
+        this->previousSlipperiness = slipperiness.value();
         this->previouslySprinting = isSprinting;
         this->previouslySneaking = isSneaking;
         this->previouslyInWeb = this->modifiers & (int)Modifiers::WEB;
