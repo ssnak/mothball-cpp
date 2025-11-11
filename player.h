@@ -9,8 +9,8 @@
 class Player {
    public:
     enum class State { JUMPING, GROUNDED, AIRBORNE };
-    Vector2 position = {0.0f, 0.0f};
-    Vector2 velocity = {0.0f, 0.0f};
+    Vector2<double> position = {0.0f, 0.0f};
+    Vector2<double> velocity = {0.0f, 0.0f};
     float defaultGroundSlipperiness = 0.6f;
     int angles = 65536;
     float rotation = 0.0f;
@@ -52,7 +52,12 @@ class Player {
     }
 
     // x: forward, z: strafe
-    Vector2 movementValues() { return Vector2{1.0f, 0.0f}; }
+    Vector2<float> movementValues() {
+        if (this->reverse) {
+            return Vector2<float>{-1.0f, 0.0f};
+        }
+        return Vector2<float>{1.0f, 0.0f};
+    }
     float getMovementMultiplier(float slipperiness, bool isSprinting, int16_t speed, int16_t slow);
     float getOptimalStrafeJumpAngle(std::optional<int> speed, std::optional<int> slow,
                                     std::optional<float> slipperiness, bool dummyForNow) {

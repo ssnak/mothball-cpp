@@ -31,7 +31,7 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
 
         if (this->modifiers & (int)Modifiers::SOULSAND) this->velocity.scale(0.4);
 
-        Vector2 direction = this->movementValues();
+        Vector2<float> direction = this->movementValues();
 
         if (this->reverse) {
             direction.scale(-1);
@@ -78,8 +78,8 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
 
         if (this->modifiers & (int)Modifiers::WEB) this->velocity.scale(0.25f);
         if (this->modifiers & (int)Modifiers::LADDER) {
-            this->velocity.x = std::clamp(this->velocity.x, 0.15f, -0.15f);
-            this->velocity.z = std::clamp(this->velocity.z, 0.15f, -0.15f);
+            this->velocity.x = std::clamp(this->velocity.x, 0.15, -0.15);
+            this->velocity.z = std::clamp(this->velocity.z, 0.15, -0.15);
         }
 
         this->previousSlipperiness = slipperiness;

@@ -1,13 +1,14 @@
+template <typename T>
 struct Vector2 {
-    float x;
-    float z;
+    T x;
+    T z;
     void add(const Vector2 &other) {
         x += other.x;
         z += other.z;
     }
-    void scale(float scalar) {
+    void scale(T scalar) {
         x *= scalar;
         z *= scalar;
     }
-    float sqrMagnitude() { return x * x + z * z; }
+    T sqrMagnitude() { return x * x + z * z; }
 };
