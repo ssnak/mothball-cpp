@@ -54,7 +54,7 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
         if (this->state == State::JUMPING && isSprinting) {
             float facing = rotation.value() * 0.017453292f;
             this->velocity.x -= double(this->mcsin(facing) * sprintjumpBoost);
-            this->velocity.x += double(this->mccos(facing) * sprintjumpBoost);
+            this->velocity.z += double(this->mccos(facing) * sprintjumpBoost);
         }
 
         if (this->modifiers & (int)Modifiers::BLOCK) direction.scale(0.2f);
