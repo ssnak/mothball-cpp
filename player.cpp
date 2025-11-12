@@ -90,13 +90,12 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
 
 float Player::getMovementMultiplier(float slipperiness, bool isSprinting, int16_t speed, int16_t slow) {
     if (this->modifiers & (int)Modifiers::WATER || this->modifiers & (int)Modifiers::LAVA) {
-        return 0.02;
+        return 0.02f;
     } else if (this->state == State::AIRBORNE) {
         if ((this->airSprintDelay && this->previouslySprinting) || (!this->airSprintDelay && isSprinting)) {
-            return 0.02f * 0.3f * 2.0f;
-
+            return 0.02f + 0.02f * 0.3f;
         } else {
-            return 0.0f;
+            return 0.02f;
         }
     } else {
         float multiplier = 0.1f;

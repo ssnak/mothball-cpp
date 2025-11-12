@@ -2,6 +2,8 @@ template <typename T>
 struct Vector2 {
     T x;
     T z;
+    Vector2() : x{}, z{} {}
+    Vector2(T x, T z) : x(x), z(z) {}
     void add(const Vector2 &other) {
         x += other.x;
         z += other.z;

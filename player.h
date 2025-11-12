@@ -22,8 +22,8 @@ class Player {
 
    public:
     enum class State { JUMPING, GROUNDED, AIRBORNE };
-    Vector2<double> position = {0.0f, 0.0f};
-    Vector2<double> velocity = {0.0f, 0.0f};
+    Vector2<double> position = {0.0, 0.0};
+    Vector2<double> velocity = {0.0, 0.0};
     float defaultGroundSlipperiness = 0.6f;
     float rotation = 0.0f;
     float lastRotation = 0.0f;
@@ -60,7 +60,7 @@ class Player {
 
     float getAngle() {
         // TODO: Implement getAngle
-        return 0.0f;
+        return this->rotation;
     }
 
     // x: forward, z: strafe
@@ -122,7 +122,7 @@ class Player {
     }
 
     void walkair(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 45.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
+        this->move(duration, rotation, 0.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
     }
 
     void walkair45(int duration, std::optional<float> rotation) {
@@ -130,7 +130,7 @@ class Player {
     }
 
     void sprintair(int duration, std::optional<float> rotation) {
-        this->move(duration, rotation, 45.0f, 1.0, true, false, std::nullopt, std::nullopt, State::AIRBORNE);
+        this->move(duration, rotation, 0.0f, 1.0, true, false, std::nullopt, std::nullopt, State::AIRBORNE);
     }
 
     void sprintair45(int duration, std::optional<float> rotation) {
@@ -140,7 +140,7 @@ class Player {
     void walkjump(int duration, std::optional<float> rotation, std::optional<float> slipperiness,
                   std::optional<int> speed, std::optional<int> slow) {
         if (duration > 0) {
-            this->move(1, rotation, 45.0f, slipperiness, false, false, speed, slow, State::JUMPING);
+            this->move(1, rotation, 0.0f, slipperiness, false, false, speed, slow, State::JUMPING);
             this->walkair(duration - 1, rotation);
         }
     }
