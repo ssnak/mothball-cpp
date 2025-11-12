@@ -6,6 +6,13 @@
 
 #include "vector.h"
 
+struct Args {
+    std::optional<float> rotation;
+    std::optional<float> slipperiness;
+    std::optional<int> speed;
+    std::optional<int> slow;
+};
+
 constexpr double PI = 3.14159265358979323846;
 inline std::array<float, 65536> makeSinTable() {
     std::array<float, 65536> table{};
@@ -15,21 +22,14 @@ inline std::array<float, 65536> makeSinTable() {
     }
     return table;
 }
-struct Args {
-    std::optional<float> rotation;
-    std::optional<float> slipperiness;
-    std::optional<int> speed;
-    std::optional<int> slow;
-};
-
 class Player {
    private:
     inline static const std::array<float, 65536> SIN_TABLE = makeSinTable();
 
    public:
     enum class State { JUMPING, GROUNDED, AIRBORNE };
-    Vector2<double> position = {0.0f, 0.0f};
-    Vector2<double> velocity = {0.0f, 0.0f};
+    Vector2<double> position = {0.0, 0.0};
+    Vector2<double> velocity = {0.0, 0.0};
     float defaultGroundSlipperiness = 0.6f;
     float rotation = 0.0f;
     float lastRotation = 0.0f;
@@ -66,7 +66,7 @@ class Player {
 
     float getAngle() {
         // TODO: Implement getAngle
-        return 0.0f;
+        return this->rotation;
     }
 
     // x: forward, z: strafe
@@ -128,7 +128,7 @@ class Player {
     }
 
     void walkair(int duration, Args args) {
-        this->move(duration, args.rotation, 45.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
+        this->move(duration, args.rotation, 0.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
     }
 
     void walkair45(int duration, Args args) {
@@ -136,7 +136,7 @@ class Player {
     }
 
     void sprintair(int duration, Args args) {
-        this->move(duration, args.rotation, 45.0f, 1.0, true, false, std::nullopt, std::nullopt, State::AIRBORNE);
+        this->move(duration, args.rotation, 0.0f, 1.0, true, false, std::nullopt, std::nullopt, State::AIRBORNE);
     }
 
     void sprintair45(int duration, Args args) {
@@ -145,7 +145,7 @@ class Player {
 
     void walkjump(int duration, Args args) {
         if (duration > 0) {
-            this->move(1, args.rotation, 45.0f, args.slipperiness, false, false, args.speed, args.slow, State::JUMPING);
+            this->move(1, args.rotation, 0.0f, args.slipperiness, false, false, args.speed, args.slow, State::JUMPING);
             this->walkair(duration - 1, args);
         }
     }
