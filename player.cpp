@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
 #include <optional>
 
 void Player::move(int duration, std::optional<float> rotation, float rotationOffset, std::optional<float> slipperiness,
@@ -106,4 +107,11 @@ float Player::getMovementMultiplier(float slipperiness, bool isSprinting, int16_
         float drag = 0.91f * slipperiness;
         return multiplier * (0.16277136f / (drag * drag * drag));
     }
+}
+std::ostream& operator<<(std::ostream& os, const Player& p) {
+    os << "Velocity: (" << std::setprecision(p.precision) << p.velocity.x << ", " << std::setprecision(p.precision)
+       << p.velocity.z << ")" << std::endl
+       << "Position: (" << std::setprecision(p.precision) << p.position.x << ", " << std::setprecision(p.precision)
+       << p.position.z << ")" << std::endl;
+    return os;
 }

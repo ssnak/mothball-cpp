@@ -1,7 +1,10 @@
+#include <bits/ostream.h>
+
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <optional>
+#include <ostream>
 #include <string>
 
 #include "vector.h"
@@ -45,6 +48,7 @@ class Player {
     bool previouslySneaking = false;
     bool previouslyInWeb = false;
     bool previouslySprinting = false;
+    int precision = 7;
 
     enum class Modifiers : int {
         WATER = 1,
@@ -360,3 +364,5 @@ class Player {
         }
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const Player& p);
