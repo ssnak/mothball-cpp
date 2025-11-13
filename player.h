@@ -14,6 +14,8 @@ struct Args {
     std::optional<float> slipperiness;
     std::optional<int> speed;
     std::optional<int> slow;
+    Args() = default;
+    Args(float rotation) : rotation(rotation) {}
 };
 
 constexpr double PI = 3.14159265358979323846;
@@ -28,33 +30,27 @@ inline std::array<float, 65536> makeSinTable() {
 class Player {
    private:
     inline static const std::array<float, 65536> SIN_TABLE = makeSinTable();
-
-   public:
     enum class State { JUMPING, GROUNDED, AIRBORNE };
-    Vector2<double> position = {0.0, 0.0};
-    Vector2<double> velocity = {0.0, 0.0};
-    float defaultGroundSlipperiness = 0.6f;
-    float rotation = 0.0f;
-    float lastRotation = 0.0f;
-    float lastTurn = 0.0f;
+    State m_state = State::JUMPING;
+    const float m_sprintjumpBoost = 0.2f;
+    const float m_inertiaThreshold = 0.005;
+    float m_defaultGroundSlipperiness = 0.6f;
+    float m_rotation = 0.0f;
+    float m_lastRotation = 0.0f;
+    float m_lastTurn = 0.0f;
     // TODO: add angle queue, and turn queue
-    bool airSprintDelay = true;
-    bool sneakDelay = false;
-    int8_t inertiaAxis = 1;
-    std::string inputs;
-    State state = State::JUMPING;
+    bool m_airSprintDelay = true;
+    bool m_sneakDelay = false;
+    int8_t m_inertiaAxis = 1;
     // TODO: add record, history, macros, and record inertia
-    int16_t speedEffect = 0;
-    int16_t slowEffect = 0;
-    int modifiers = 0;
-    const float sprintjumpBoost = 0.2f;
-    const float inertiaThreshold = 0.005;
-    bool reverse = false;
-    float previousSlipperiness = 0.6f;
-    bool previouslySneaking = false;
-    bool previouslyInWeb = false;
-    bool previouslySprinting = false;
-    int precision = 7;
+    int16_t m_speedEffect = 0;
+    int16_t m_slowEffect = 0;
+    int m_modifiers = 0;
+    bool m_reverse = false;
+    float m_previousSlipperiness = 0.6f;
+    bool m_previouslySneaking = false;
+    bool m_previouslyInWeb = false;
+    bool m_previouslySprinting = false;
 
     enum class Modifiers : int {
         WATER = 1,
@@ -65,17 +61,20 @@ class Player {
         SOULSAND = 1 << 5
     };
 
+   private:
     void move(int duration, std::optional<float> rotation, float rotationOffset, std::optional<float> slipperiness,
               bool isSprinting, bool isSneaking, std::optional<int> speed, std::optional<int> slow, State state);
+    void update(bool overrideRotation, float rotationOffset, bool isSprinting, bool isSneaking, float slipperiness,
+                float rotation, int speed, int slow, float sprintjumpBoost);
 
     float getAngle() {
         // TODO: Implement getAngle
-        return this->rotation;
+        return m_rotation;
     }
 
     // x: forward, z: strafe
     Vector2<float> movementValues() {
-        if (this->reverse) {
+        if (this->m_reverse) {
             return Vector2<float>{-1.0f, 0.0f};
         }
         return Vector2<float>{1.0f, 0.0f};
@@ -88,15 +87,15 @@ class Player {
         playerCopy.position.z = 0.0;
         playerCopy.velocity.x = 0.0;
         playerCopy.velocity.z = 0.0;
-        playerCopy.rotation = 0.0f;
+        playerCopy.m_rotation = 0.0f;
         if (speed.has_value()) {
-            playerCopy.speedEffect = speed.value();
+            playerCopy.m_speedEffect = speed.value();
         }
         if (slow.has_value()) {
-            playerCopy.slowEffect = slow.value();
+            playerCopy.m_slowEffect = slow.value();
         }
         if (slipperiness.has_value()) {
-            playerCopy.defaultGroundSlipperiness = slipperiness.value();
+            playerCopy.m_defaultGroundSlipperiness = slipperiness.value();
         }
         playerCopy.inputs = "";
         if (isSneaking) {
@@ -107,10 +106,21 @@ class Player {
         return std::fabs(180.0 * std::atan2(playerCopy.velocity.x, playerCopy.velocity.z) / PI);
     }
 
-    float mcsin(float radians) { return SIN_TABLE[static_cast<int>(radians * 10430.378f) & 0xffff]; }
+    float mcsin(float radians) {
+        // 10430.378f comes from 65536 / (2.0 * PI)
+        return SIN_TABLE[static_cast<int>(radians * 10430.378f) & 0xffff];
+    }
 
     float mccos(float radians) { return SIN_TABLE[static_cast<int>(radians * 10430.378f + 16384.0f) & 0xffff]; }
 
+   public:
+    Vector2<double> position = {0.0, 0.0};
+    Vector2<double> velocity = {0.0, 0.0};
+    std::string inputs;
+    bool stepExecution = false;
+    int precision = 7;
+
+   public:
     void walk(int duration, Args args) {
         this->move(duration, args.rotation, 0.0f, args.slipperiness, false, false, args.speed, args.slow,
                    State::GROUNDED);
