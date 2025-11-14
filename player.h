@@ -1,4 +1,5 @@
 #include <bits/ostream.h>
+#include <sys/types.h>
 
 #include <array>
 #include <cmath>
@@ -24,6 +25,15 @@ class Player {
     inline static const std::array<float, 65536> SIN_TABLE = makeSinTable();
     enum class State { JUMPING, GROUNDED, AIRBORNE };
     State m_state = State::JUMPING;
+    enum class Modifiers : u_int32_t {
+        NONE = 0,
+        WATER = 1,
+        LAVA = 1 << 1,
+        WEB = 1 << 2,
+        BLOCK = 1 << 3,
+        LADDER = 1 << 4,
+        SOULSAND = 1 << 5
+    };
     const float m_sprintjumpBoost = 0.2f;
     const float m_inertiaThreshold = 0.005;
     float m_defaultGroundSlipperiness = 0.6f;
@@ -37,27 +47,21 @@ class Player {
     // TODO: add record, history, macros, and record inertia
     int16_t m_speedEffect = 0;
     int16_t m_slowEffect = 0;
-    int m_modifiers = 0;
+    Modifiers m_modifiers = Modifiers::NONE;
     bool m_reverse = false;
     float m_previousSlipperiness = 0.6f;
     bool m_previouslySneaking = false;
     bool m_previouslyInWeb = false;
     bool m_previouslySprinting = false;
 
-    enum class Modifiers : int {
-        WATER = 1,
-        LAVA = 1 << 1,
-        WEB = 1 << 2,
-        BLOCK = 1 << 3,
-        LADDER = 1 << 4,
-        SOULSAND = 1 << 5
-    };
-
    private:
     void move(int duration, std::optional<float> rotation, float rotationOffset, std::optional<float> slipperiness,
               bool isSprinting, bool isSneaking, std::optional<int> speed, std::optional<int> slow, State state);
     void update(bool overrideRotation, float rotationOffset, bool isSprinting, bool isSneaking, float slipperiness,
                 float rotation, int speed, int slow, float sprintjumpBoost);
+    bool hasModifier(Modifiers modifier) {
+        return static_cast<u_int32_t>(m_modifiers) & static_cast<u_int32_t>(modifier);
+    }
 
     float getAngle() {
         // TODO: Implement getAngle
