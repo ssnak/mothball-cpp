@@ -19,16 +19,16 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
         rotation = 0.0f;
     }
 
-    if (m_modifiers & (int)Modifiers::WATER) {
+    if (this->hasModifier(Modifiers::WATER)) {
         slipperiness = 0.8f / 0.91f;
-    } else if (m_modifiers & (int)Modifiers::LAVA) {
+    } else if (this->hasModifier(Modifiers::LAVA)) {
         slipperiness = 0.5f / 0.91f;
     }
 
     if (rotationOffset == 45) this->inputs = "wa";
     m_state = state;
 
-    if (((m_sneakDelay && m_previouslySneaking) || (!m_sneakDelay && isSneaking)) && m_modifiers & (int)Modifiers::LAVA)
+    if (((m_sneakDelay && m_previouslySneaking) || (!m_sneakDelay && isSneaking)) && this->hasModifier(Modifiers::LAVA))
         m_state = State::AIRBORNE;
 
     float sprintjumpBoost = m_sprintjumpBoost;
@@ -41,7 +41,7 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
 }
 
 float Player::getMovementMultiplier(float slipperiness, bool isSprinting, int16_t speed, int16_t slow) {
-    if (m_modifiers & (int)Modifiers::WATER || m_modifiers & (int)Modifiers::LAVA) {
+    if (this->hasModifier(Modifiers::WATER) || this->hasModifier(Modifiers::LAVA)) {
         return 0.02f;
     } else if (m_state == State::AIRBORNE) {
         if ((m_airSprintDelay && m_previouslySprinting) || (!m_airSprintDelay && isSprinting)) {
@@ -65,7 +65,7 @@ void Player::update(bool overrideRotation, float rotationOffset, bool isSprintin
     if (!overrideRotation) rotation = this->getAngle() + rotationOffset;
     this->position.add(this->velocity);
 
-    if (m_modifiers & (int)Modifiers::SOULSAND) this->velocity.scale(0.4);
+    if (this->hasModifier(Modifiers::SOULSAND)) this->velocity.scale(0.4);
 
     Vector2<float> direction = this->movementValues();
 
@@ -82,7 +82,7 @@ void Player::update(bool overrideRotation, float rotationOffset, bool isSprintin
         this->velocity.z += double(this->mccos(facing) * sprintjumpBoost);
     }
 
-    if (m_modifiers & (int)Modifiers::BLOCK) direction.scale(0.2f);
+    if (this->hasModifier(Modifiers::BLOCK)) direction.scale(0.2f);
     if ((m_sneakDelay && m_previouslySneaking) || (!m_sneakDelay && isSneaking)) direction.scale(0.3f);
     direction.scale(0.98f);
 
@@ -99,8 +99,8 @@ void Player::update(bool overrideRotation, float rotationOffset, bool isSprintin
         this->velocity.z += direction.x * cosYaw + direction.z * sinYaw;
     }
 
-    if (m_modifiers & (int)Modifiers::WEB) this->velocity.scale(0.25f);
-    if (m_modifiers & (int)Modifiers::LADDER) {
+    if (this->hasModifier(Modifiers::WEB)) this->velocity.scale(0.25f);
+    if (this->hasModifier(Modifiers::LADDER)) {
         this->velocity.x = std::clamp(this->velocity.x, 0.15, -0.15);
         this->velocity.z = std::clamp(this->velocity.z, 0.15, -0.15);
     }
@@ -108,7 +108,7 @@ void Player::update(bool overrideRotation, float rotationOffset, bool isSprintin
     m_previousSlipperiness = slipperiness;
     m_previouslySprinting = isSprinting;
     m_previouslySneaking = isSneaking;
-    m_previouslyInWeb = m_modifiers & (int)Modifiers::WEB;
+    m_previouslyInWeb = this->hasModifier(Modifiers::WEB);
     m_lastTurn = rotation - m_lastRotation;
     m_lastRotation = rotation;
 }
