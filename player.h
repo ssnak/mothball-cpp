@@ -9,6 +9,8 @@
 
 #include "vector.h"
 
+#pragma once
+
 struct Args {
     std::optional<float> rotation;
     std::optional<float> slipperiness;

@@ -1,12 +1,14 @@
-#include <cstdio>
+#include <iostream>
 
 #include "player.h"
+#include "stratfinder.h"
 
 int main() {
-    Args a{};
-    Player player;
-    player.inputs = "w";
-    player.sprint(12, a);
-    player.sprint(12, a);
-    printf("%f %f\n", player.velocity.z, player.position.z);
+    StratFinder stratfinder;
+    stratfinder.findStrat();
+    std::cout << stratfinder.duration << std::endl << stratfinder.rotation << std::endl << stratfinder.player;
+    StratFinder stratfinder2;
+    stratfinder2.left = false;
+    stratfinder2.findStrat();
+    std::cout << stratfinder2.duration << std::endl << stratfinder2.rotation << std::endl << stratfinder2.player;
 }
