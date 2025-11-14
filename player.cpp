@@ -15,6 +15,8 @@ void Player::move(int duration, std::optional<float> rotation, float rotationOff
     if (rotation.has_value()) {
         overrideRotation = true;
         rotation = rotation.value() + rotationOffset;
+    } else {
+        rotation = 0.0f;
     }
 
     if (m_modifiers & (int)Modifiers::WATER) {
