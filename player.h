@@ -57,7 +57,7 @@ class Player {
     bool m_previouslySprinting = false;
 
    private:
-    void update(bool overrideRotation, float rotationOffset, bool isSprinting, bool isSneaking, float slipperiness,
+    void update(bool overrideRotation, float rotationOffset, bool isSprinting, bool isSneaking, float& slipperiness,
                 float rotation, int speed, int slow, float sprintjumpBoost);
     bool hasModifier(Modifiers modifier) {
         return static_cast<u_int32_t>(m_modifiers) & static_cast<u_int32_t>(modifier);
@@ -163,19 +163,13 @@ class Player {
     void walkjump(int duration = 1, std::optional<float> rotation = std::nullopt,
                   std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,
                   std::optional<int> slow = std::nullopt) {
-        if (duration > 0) {
-            this->move(1, rotation, 0.0f, slipperiness, false, false, speed, slow, State::JUMPING);
-            this->walkair(duration - 1, rotation);
-        }
+        this->move(duration, rotation, 0.0f, slipperiness, false, false, speed, slow, State::JUMPING);
     }
 
     void walkjump45(int duration = 1, std::optional<float> rotation = std::nullopt,
                     std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,
                     std::optional<int> slow = std::nullopt) {
-        if (duration > 0) {
-            this->move(1, rotation, 45.0f, slipperiness, false, false, speed, slow, State::JUMPING);
-            this->walkair45(duration - 1, rotation);
-        }
+        this->move(duration, rotation, 45.0f, slipperiness, false, false, speed, slow, State::JUMPING);
     }
 
     void walkpessi(int duration = 1, int delay = 1, std::optional<float> rotation = std::nullopt,
@@ -213,19 +207,13 @@ class Player {
     void sprintjump(int duration = 1, std::optional<float> rotation = std::nullopt,
                     std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,
                     std::optional<int> slow = std::nullopt) {
-        if (duration > 0) {
-            this->move(1, rotation, 0.0f, slipperiness, true, false, speed, slow, State::JUMPING);
-            this->sprintair(duration - 1, rotation);
-        }
+        this->move(duration, rotation, 0.0f, slipperiness, true, false, speed, slow, State::JUMPING);
     }
 
     void sprintjump45(int duration = 1, std::optional<float> rotation = std::nullopt,
                       std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,
                       std::optional<int> slow = std::nullopt) {
-        if (duration > 0) {
-            this->move(1, rotation, 0.0f, slipperiness, true, false, speed, slow, State::JUMPING);
-            this->sprintair45(duration - 1, rotation);
-        }
+        this->move(duration, rotation, 0.0f, slipperiness, true, false, speed, slow, State::JUMPING);
     }
 
     void sprintstrafejump(int duration = 1, std::optional<float> rotation = std::nullopt,
@@ -329,18 +317,12 @@ class Player {
     void sneakjump(int duration = 1, std::optional<float> rotation = std::nullopt,
                    std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,
                    std::optional<int> slow = std::nullopt) {
-        if (duration > 0) {
-            this->move(1, rotation, 0.0f, slipperiness, false, true, speed, slow, State::JUMPING);
-            this->sneakair(duration - 1, rotation);
-        }
+        this->move(duration, rotation, 0.0f, slipperiness, false, true, speed, slow, State::JUMPING);
     }
     void sneakjump45(int duration = 1, std::optional<float> rotation = std::nullopt,
                      std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,
                      std::optional<int> slow = std::nullopt) {
-        if (duration > 0) {
-            this->move(1, rotation, 45.0f, slipperiness, false, true, speed, slow, State::JUMPING);
-            this->sneakair45(duration - 1, rotation);
-        }
+        this->move(duration, rotation, 45.0f, slipperiness, false, true, speed, slow, State::JUMPING);
     }
     void stop(int duration = 1, std::optional<float> slipperiness = std::nullopt) {
         this->move(duration, std::nullopt, 0.0f, slipperiness, false, false, std::nullopt, std::nullopt,
@@ -350,10 +332,8 @@ class Player {
         this->move(duration, std::nullopt, 0.0f, 1.0f, false, false, std::nullopt, std::nullopt, State::AIRBORNE);
     }
     void stopjump(int duration = 1, std::optional<float> slipperiness = std::nullopt) {
-        if (duration > 0) {
-            this->move(1, std::nullopt, 0.0f, slipperiness, false, false, std::nullopt, std::nullopt, State::JUMPING);
-            this->stopair(duration - 1);
-        }
+        this->move(duration, std::nullopt, 0.0f, slipperiness, false, false, std::nullopt, std::nullopt,
+                   State::JUMPING);
     }
     void sneakstop(int duration = 1, std::optional<float> slipperiness = std::nullopt) {
         this->move(duration, std::nullopt, 0.0f, slipperiness, false, true, std::nullopt, std::nullopt,
@@ -363,10 +343,7 @@ class Player {
         this->move(duration, std::nullopt, 0.0f, 1.0f, false, true, std::nullopt, std::nullopt, State::AIRBORNE);
     }
     void sneakstopjump(int duration = 1, std::optional<float> slipperiness = std::nullopt) {
-        if (duration > 0) {
-            this->move(1, std::nullopt, 0.0f, slipperiness, false, true, std::nullopt, std::nullopt, State::JUMPING);
-            this->stopair(duration - 1);
-        }
+        this->move(duration, std::nullopt, 0.0f, slipperiness, false, true, std::nullopt, std::nullopt, State::JUMPING);
     }
     void sneaksprint(int duration = 1, std::optional<float> rotation = std::nullopt,
                      std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,
@@ -387,10 +364,7 @@ class Player {
     void sneaksprintjump(int duration = 1, std::optional<float> rotation = std::nullopt,
                          std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,
                          std::optional<int> slow = std::nullopt) {
-        if (duration > 0) {
-            this->move(1, rotation, 0.0f, slipperiness, true, true, speed, slow, State::JUMPING);
-            this->sneaksprintair(duration - 1, rotation);
-        }
+        this->move(duration, rotation, 0.0f, slipperiness, true, true, speed, slow, State::JUMPING);
     }
     void sneaksprintjump45(int duration = 1, std::optional<float> rotation = std::nullopt,
                            std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,

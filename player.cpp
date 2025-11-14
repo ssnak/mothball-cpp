@@ -58,7 +58,7 @@ float Player::getMovementMultiplier(float slipperiness, bool isSprinting, int16_
     }
 }
 
-void Player::update(bool overrideRotation, float rotationOffset, bool isSprinting, bool isSneaking, float slipperiness,
+void Player::update(bool overrideRotation, float rotationOffset, bool isSprinting, bool isSneaking, float& slipperiness,
                     float rotation, int speed, int slow, float sprintjumpBoost) {
     if (!overrideRotation) rotation = this->getAngle() + rotationOffset;
     this->position.add(this->velocity);
@@ -74,17 +74,23 @@ void Player::update(bool overrideRotation, float rotationOffset, bool isSprintin
         if (std::fabs(this->velocity.z) < m_inertiaThreshold || m_previouslyInWeb) this->velocity.z = 0.0f;
     }
 
-    if (m_state == State::JUMPING && isSprinting) {
-        float facing = rotation * 0.017453292f;
-        this->velocity.x -= double(this->mcsin(facing) * sprintjumpBoost);
-        this->velocity.z += double(this->mccos(facing) * sprintjumpBoost);
-    }
-
     if (this->hasModifier(Modifiers::BLOCK)) direction.scale(0.2f);
     if ((m_sneakDelay && m_previouslySneaking) || (!m_sneakDelay && isSneaking)) direction.scale(0.3f);
     direction.scale(0.98f);
 
     float multiplier = this->getMovementMultiplier(slipperiness, isSprinting, speed, slow);
+    m_previousSlipperiness = slipperiness;
+
+    if (m_state == State::JUMPING) {
+        m_state = State::AIRBORNE;
+        slipperiness = 1.0f;
+        if (isSprinting) {
+            float facing = rotation * 0.017453292f;
+            this->velocity.x -= double(this->mcsin(facing) * sprintjumpBoost);
+            this->velocity.z += double(this->mccos(facing) * sprintjumpBoost);
+        }
+    }
+
     float distance = direction.sqrMagnitude();
     if (distance > 0.0f) {
         distance = std::sqrtf(distance);
@@ -103,7 +109,6 @@ void Player::update(bool overrideRotation, float rotationOffset, bool isSprintin
         this->velocity.z = std::clamp(this->velocity.z, 0.15, -0.15);
     }
 
-    m_previousSlipperiness = slipperiness;
     m_previouslySprinting = isSprinting;
     m_previouslySneaking = isSneaking;
     m_previouslyInWeb = this->hasModifier(Modifiers::WEB);
