@@ -7,9 +7,18 @@ project('sim', 'cpp',
   }
 )
 
-sources = ['main.cpp', 'player.cpp']
 
-# Executable
+re2c = find_program('re2c')
+lexer_cpp = custom_target(
+    'lexer_generated.cpp',
+    input: 'lexer.re',
+    output: 'lexer.cpp',
+    command: [re2c, '-o', '@OUTPUT@', '@INPUT@'],
+    depend_files: 'lexer.h'
+)
+
+sources = ['main.cpp', 'player.cpp', lexer_cpp]
+
 executable('sim',
   sources: sources,
   install: false
