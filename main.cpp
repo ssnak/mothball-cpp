@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <optional>
 
 #include "lexer.h"
 #include "player.h"
@@ -17,6 +16,6 @@ int main() {
     }
     // Player player;
     // player.inputs = "w";
-    // player.sprint(12, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+    // player.sprint(12);
     // printf("%f %f\n", player.velocity.z, player.position.z);
 }
