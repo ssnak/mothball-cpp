@@ -30,22 +30,21 @@ enum class TokenType {
 
 struct Token {
     TokenType type;
-    std::string lexeme;
-    Token(TokenType type, std::string lexeme) : type(type), lexeme(lexeme) {}
+    std::string text;
+    Token(TokenType type, std::string text) : type(type), text(text) {}
     Token() = default;
 };
 
 class Lexer {
    private:
     const char* m_yylimit;
+    const char* m_input;
 
    public:
-    const char* input;
-    uint32_t pos = 0;
     Lexer(const char* input) {
-        this->input = input;
-        m_yylimit = input + std::strlen(input);
+        m_input = input;
+        m_yylimit = m_input + std::strlen(m_input);
     }
 
-    Token nextToken();
+    Token next();
 };

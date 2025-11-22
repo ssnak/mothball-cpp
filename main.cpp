@@ -12,8 +12,8 @@ int main() {
     Lexer lex(input);
     Token t;
     while (t.type != TokenType::EndOfFile) {
-        t = lex.nextToken();
-        printf("%d %s\n", static_cast<int>(t.type), t.lexeme.c_str());
+        t = lex.next();
+        printf("%d %s\n", static_cast<int>(t.type), t.text.c_str());
     }
     // Player player;
     // player.inputs = "w";

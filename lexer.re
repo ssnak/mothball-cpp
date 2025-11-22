@@ -1,9 +1,9 @@
 #include "lexer.h"
-#define s_token std::string(start, input)
-#define c_token std::string(input - 1, 1)
+#define s_token std::string(start, m_input)
+#define c_token std::string(m_input - 1, 1)
 
-Token Lexer::nextToken() {
-    const char* YYLIMIT = input + std::strlen(input);
+Token Lexer::next() {
+    const char* YYLIMIT = m_input + std::strlen(m_input);
     const char* YYMARKER;
     const char* start;
     /*!stags:re2c format = 'const char *@@;\n'; */
@@ -14,7 +14,7 @@ loop:
         re2c:api:style = free-form;
         re2c:yyfill:enable = 0;
         re2c:define:YYCTYPE = char;
-        re2c:define:YYCURSOR = input;
+        re2c:define:YYCURSOR = m_input;
         re2c:tags = 1;
         identifier = "|"|([a-zA-Z]+"45"?);
         modifier = ("["[a-zA-Z]+"]")|("."[wasd]{1,4});
@@ -41,7 +41,7 @@ loop:
         @start modifier        { return Token(TokenType::Modifier, s_token); }
         @start number          { return Token(TokenType::Integer, s_token); }
         @start number"."number { return Token(TokenType::Float, s_token); }
-        [ \t\n\r]+             { goto loop; }
+        [ \t\n\r;"\"]+             { goto loop; }
         *                      { return Token(TokenType::Unknown, "UNKNOWN"); }
         $                      { return Token(TokenType::EndOfFile, "EOF"); }
     */
