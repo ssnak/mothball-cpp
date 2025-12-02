@@ -17,7 +17,7 @@ lexer_cpp = custom_target(
     depend_files: 'lexer.h'
 )
 
-sources = ['main.cpp', 'player.cpp', lexer_cpp]
+sources = ['main.cpp', 'player.cpp', 'parser.cpp', lexer_cpp]
 
 executable('sim',
   sources: sources,
