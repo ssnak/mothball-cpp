@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <cstring>
 #include <string>
 enum class TokenType {
     Identifier,
@@ -16,6 +14,7 @@ enum class TokenType {
     Multiply,
     Divide,
     Subtract,
+    Let,
     For,
     While,
     If,
@@ -37,13 +36,14 @@ struct Token {
 
 class Lexer {
    private:
-    const char* m_yylimit;
-    const char* m_input;
+    std::string m_input;
+    const char* m_cursor;
+    const char* m_limit;
 
    public:
-    Lexer(const char* input) {
-        m_input = input;
-        m_yylimit = m_input + std::strlen(m_input);
+    Lexer(const std::string& input) : m_input(input) {
+        m_cursor = m_input.c_str();
+        m_limit = m_cursor + m_input.length();
     }
 
     Token next();

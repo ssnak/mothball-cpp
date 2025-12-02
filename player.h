@@ -1,3 +1,5 @@
+#pragma once
+
 #include <bits/ostream.h>
 #include <sys/types.h>
 
@@ -19,11 +21,11 @@ inline std::array<float, 65536> makeSinTable() {
     }
     return table;
 }
+enum class State { JUMPING, GROUNDED, AIRBORNE };
 
 class Player {
    private:
     inline static const std::array<float, 65536> SIN_TABLE = makeSinTable();
-    enum class State { JUMPING, GROUNDED, AIRBORNE };
     State m_state = State::JUMPING;
     enum class Modifiers : u_int32_t {
         NONE = 0,
@@ -55,8 +57,6 @@ class Player {
     bool m_previouslySprinting = false;
 
    private:
-    void move(int duration, std::optional<float> rotation, float rotationOffset, std::optional<float> slipperiness,
-              bool isSprinting, bool isSneaking, std::optional<int> speed, std::optional<int> slow, State state);
     void update(bool overrideRotation, float rotationOffset, bool isSprinting, bool isSneaking, float slipperiness,
                 float rotation, int speed, int slow, float sprintjumpBoost);
     bool hasModifier(Modifiers modifier) {
@@ -117,6 +117,9 @@ class Player {
     int precision = 7;
 
    public:
+    void move(int duration, std::optional<float> rotation, float rotationOffset, std::optional<float> slipperiness,
+              bool isSprinting, bool isSneaking, std::optional<int> speed, std::optional<int> slow, State state);
+
     void walk(int duration = 1, std::optional<float> rotation = std::nullopt,
               std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,
               std::optional<int> slow = std::nullopt) {

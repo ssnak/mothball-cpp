@@ -1,9 +1,8 @@
 #include "lexer.h"
-#define s_token std::string(start, m_input)
-#define c_token std::string(m_input - 1, 1)
+#define s_token std::string(start, m_cursor)
+#define c_token std::string(m_cursor - 1, 1)
 
 Token Lexer::next() {
-    const char* YYLIMIT = m_input + std::strlen(m_input);
     const char* YYMARKER;
     const char* start;
     /*!stags:re2c format = 'const char *@@;\n'; */
@@ -14,13 +13,15 @@ loop:
         re2c:api:style = free-form;
         re2c:yyfill:enable = 0;
         re2c:define:YYCTYPE = char;
-        re2c:define:YYCURSOR = m_input;
+        re2c:define:YYCURSOR = m_cursor;
+        re2c:define:YYLIMIT = m_limit;
         re2c:tags = 1;
         identifier = "|"|([a-zA-Z]+"45"?);
         modifier = ("["[a-zA-Z]+"]")|("."[wasd]{1,4});
         number = [0-9]+;
         boolean = "true"|"false";
 
+        @start "let"           { return Token(TokenType::Let, s_token); }
         @start "for"           { return Token(TokenType::For, s_token); }
         @start "while"         { return Token(TokenType::While, s_token); }
         @start "if"            { return Token(TokenType::If, s_token); }
