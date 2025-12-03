@@ -22,6 +22,8 @@ void CodeVisitor::visitCallExpr(CallExpr& expr) {
     bool isSprinting = false;
     State state = State::GROUNDED;
     std::optional<float> slipperiness = std::nullopt;
+    player.inputs = expr.inputs;
+    if (player.inputs.empty()) player.inputs = "w";
     if (check(identifier, "sneak")) {
         isSneaking = true;
     }

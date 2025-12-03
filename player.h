@@ -70,10 +70,21 @@ class Player {
 
     // x: forward, z: strafe
     Vector2<float> movementValues() {
-        if (this->m_reverse) {
-            return Vector2<float>{-1.0f, 0.0f};
+        Vector2<float> movement{0.0f, 0.0f};
+        if (inputs.find("w") != inputs.npos) {
+            movement.x = 1.0f;
+        } else if (inputs.find("s") != inputs.npos) {
+            movement.x = -1.0f;
         }
-        return Vector2<float>{1.0f, 0.0f};
+        if (inputs.find("a") != inputs.npos) {
+            movement.z = 1.0f;
+        } else if (inputs.find("d") != inputs.npos) {
+            movement.z = -1.0f;
+        }
+        if (this->m_reverse) {
+            movement.scale(-1.0f);
+        }
+        return movement;
     }
     float getMovementMultiplier(float slipperiness, bool isSprinting, int16_t speed, int16_t slow);
     float getOptimalStrafeJumpAngle(std::optional<int> speed, std::optional<int> slow,
