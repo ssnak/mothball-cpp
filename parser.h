@@ -114,9 +114,12 @@ class Scanner {
     size_t pos = -1;
     Token current() { return tokens[pos]; }
     Token consume() {
-        Token token = lexer.next();
+        Token token;
         if (++pos >= tokens.size()) {
+            token = lexer.next();
             tokens.push_back(token);
+        } else {
+            token = tokens[pos];
         }
         return token;
     }
