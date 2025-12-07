@@ -2,49 +2,138 @@
 
 #include <iostream>
 #include <optional>
+#include <string>
+#include <variant>
 
-#include "player.h"
-Player player;
 void BlockStmt::accept(struct StmtVisitor& visitor) { visitor.visitBlockStmt(*this); }
 void ExprStmt::accept(struct StmtVisitor& visitor) { visitor.visitExprStmt(*this); }
-void CallExpr::accept(struct ExprVisitor& visitor) { visitor.visitCallExpr(*this); }
-bool check(std::string& str, std::string sub) {
+OptionalValue LiteralExpr::accept(struct ExprVisitor& visitor) { return visitor.visitLiteralExpr(*this); }
+OptionalValue BinaryExpr::accept(struct ExprVisitor& visitor) { return visitor.visitBinaryExpr(*this); }
+OptionalValue CallExpr::accept(struct ExprVisitor& visitor) { return visitor.visitCallExpr(*this); }
+
+void CodeVisitor::visitExprStmt(ExprStmt& stmt) { stmt.expression->accept(*this); }
+void CodeVisitor::visitBlockStmt(BlockStmt& stmt) {
+    for (const auto& it : stmt.statements) {
+        it.get()->accept(*this);
+    }
+}
+
+bool stringCheck(std::string& str, std::string sub) {
     if (str.starts_with(sub)) {
         str = str.substr(sub.length());
         return true;
     }
     return false;
 }
-void CodeVisitor::visitExprStmt(ExprStmt& stmt) { stmt.expression->accept(*this); }
-void CodeVisitor::visitCallExpr(CallExpr& expr) {
+OptionalValue CodeVisitor::visitLiteralExpr(LiteralExpr& expr) {
+    switch (expr.type) {
+        case LiteralExpr::Type::String:
+            return expr.value;
+        case LiteralExpr::Type::Boolean:
+            return expr.value == "true";
+        case LiteralExpr::Type::Integer:
+            return std::stoi(expr.value);
+        case LiteralExpr::Type::Float:
+            return std::stof(expr.value);
+    }
+    return std::nullopt;
+}
+
+template <typename... Ts>
+struct overloaded : Ts... {
+    using Ts::operator()...;
+};
+template <typename... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+template <typename T>
+T checkRhs(T rhs) {
+    if (rhs == 0) {
+        throw std::runtime_error("Can not divide by zero");
+    }
+    return rhs;
+}
+OptionalValue CodeVisitor::visitBinaryExpr(BinaryExpr& expr) {
+    switch (expr.operation[0]) {
+        case '+': {
+            return std::visit(
+                overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs + rhs; },
+                           [](float lhs, float rhs) -> OptionalValue { return lhs + rhs; },
+                           [](int lhs, float rhs) -> OptionalValue { return lhs + rhs; },
+                           [](float lhs, int rhs) -> OptionalValue { return lhs + rhs; },
+                           [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
+                expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+        }
+        case '-': {
+            return std::visit(
+                overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs - rhs; },
+                           [](float lhs, float rhs) -> OptionalValue { return lhs - rhs; },
+                           [](int lhs, float rhs) -> OptionalValue { return lhs - rhs; },
+                           [](float lhs, int rhs) -> OptionalValue { return lhs - rhs; },
+                           [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
+                expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+        }
+        case '*': {
+            return std::visit(
+                overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs * rhs; },
+                           [](float lhs, float rhs) -> OptionalValue { return lhs * rhs; },
+                           [](int lhs, float rhs) -> OptionalValue { return lhs * rhs; },
+                           [](float lhs, int rhs) -> OptionalValue { return lhs * rhs; },
+                           [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
+                expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+        }
+        case '/': {
+            return std::visit(
+                overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
+                           [](float lhs, float rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
+                           [](int lhs, float rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
+                           [](float lhs, int rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
+                           [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
+                expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+        }
+    }
+    return std::nullopt;
+}
+OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
     std::string identifier{expr.identifier};
     bool isSneaking = false;
     bool isSprinting = false;
     State state = State::GROUNDED;
     std::optional<float> slipperiness = std::nullopt;
-    player.inputs = expr.inputs;
-    if (player.inputs.empty()) player.inputs = "w";
-    if (check(identifier, "sneak")) {
+    m_player.inputs = expr.inputs;
+    if (m_player.inputs.empty()) m_player.inputs = "w";
+    // std::vector<std::vector<std::string>> keywords{{"sneak"}, {"walk", "sprint", "stop"}, {"jump", "air", "ground"}};
+    if (stringCheck(identifier, "sneak")) {
         isSneaking = true;
     }
-    if (check(identifier, "sprint")) {
+    if (stringCheck(identifier, "sprint")) {
         isSprinting = true;
-    } else if (check(identifier, "stop")) {
-        player.inputs = "";
+    } else if (stringCheck(identifier, "stop")) {
+        m_player.inputs = "";
     } else {
-        check(identifier, "walk");
+        stringCheck(identifier, "walk");
     }
-    if (check(identifier, "jump")) {
+    if (stringCheck(identifier, "jump")) {
         state = State::JUMPING;
-    } else if (check(identifier, "air")) {
+    } else if (stringCheck(identifier, "air")) {
         state = State::AIRBORNE;
         slipperiness = 1.0f;
     }
-    player.move(12, std::nullopt, 0.0f, slipperiness, isSprinting, isSneaking, std::nullopt, std::nullopt, state);
-    std::cout << player;
-}
-void CodeVisitor::visitBlockStmt(BlockStmt& stmt) {
-    for (const auto& it : stmt.statements) {
-        it.get()->accept(*this);
+    std::cout << "Args: " << expr.arguments.size() << std::endl;
+    int duration = 1;
+    if (auto args = std::move(expr.arguments); args.size() > 0) {
+        if (auto v = args[0]->accept(*this); v.has_value()) {
+            Value value = v.value();
+            std::visit(overloaded{[&duration](int val) { duration = val; },
+                                  [&duration](float val) { duration = static_cast<float>(val); },
+                                  [](bool) { std::cerr << "Expected int got bool instead" << std::endl; },
+                                  [](std::string) { std::cerr << "Expected int got string instead" << std::endl; }},
+                       value);
+        } else {
+            std::cerr << "Error argument not recognized" << std::endl;
+        }
     }
+    m_player.move(duration, std::nullopt, 0.0f, slipperiness, isSprinting, isSneaking, std::nullopt, std::nullopt,
+                  state);
+    std::cout << m_player;
+    return std::nullopt;
 }

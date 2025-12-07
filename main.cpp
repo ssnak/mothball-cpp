@@ -5,7 +5,7 @@
 #include "player.h"
 
 int main() {
-    std::string input = "sprintair";
+    std::string input = "sprintjump 2 + 5.0 * 2 walk.s sprintjump sprintair";
     Scanner scanner(input);
     CodeVisitor vis;
     scanner.scan().accept(vis);

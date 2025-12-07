@@ -2,20 +2,27 @@
 #include <regex.h>
 
 #include <memory>
+#include <optional>
 #include <string>
+#include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "lexer.h"
+#include "player.h"
 
+using Value = std::variant<int, float, bool, std::string>;
+using OptionalValue = std::optional<Value>;
 struct Expr {
     virtual ~Expr() = default;
-    virtual void accept(struct ExprVisitor& visitor) = 0;
+    virtual OptionalValue accept(struct ExprVisitor& visitor) = 0;
 };
 
 struct LiteralExpr : public Expr {
     enum class Type { Integer, Float, Boolean, String };
     Type type;
     std::string value;
+    OptionalValue accept(struct ExprVisitor& visitor) override;
     LiteralExpr(Type type, std::string value) : type(type), value(value) {}
 };
 
@@ -25,25 +32,27 @@ struct CallExpr : public Expr {
     std::vector<std::string> modifiers;
     std::string inputs;
     std::vector<std::unique_ptr<Expr>> arguments;
-    void accept(struct ExprVisitor& visitor) override;
+    OptionalValue accept(struct ExprVisitor& visitor) override;
 };
 
 struct UnaryExpr : public Expr {};
 
 struct BinaryExpr : public Expr {
     std::unique_ptr<Expr> lhs;
-    char operation;
+    std::string operation;
     std::unique_ptr<Expr> rhs;
+    OptionalValue accept(struct ExprVisitor& visitor) override;
 
-    explicit BinaryExpr(std::unique_ptr<Expr> lhs, char op, std::unique_ptr<Expr> rhs)
-        : lhs(std::move(lhs)), operation(op), rhs(std::move(rhs)) {}
+    BinaryExpr() {}
+    explicit BinaryExpr(std::unique_ptr<Expr> lhs, std::string& op, std::unique_ptr<Expr> rhs)
+        : lhs(std::move(lhs)), operation{op}, rhs(std::move(rhs)) {}
 };
 
 struct ExprVisitor {
-    // virtual void visitLiteralExpr() = 0;
-    virtual void visitCallExpr(CallExpr& expr) = 0;
+    virtual OptionalValue visitLiteralExpr(LiteralExpr& expr) = 0;
     // virtual void visitUnaryExpr() = 0;
-    // virtual void visitBinaryExpr() = 0;
+    virtual OptionalValue visitBinaryExpr(BinaryExpr& expr) = 0;
+    virtual OptionalValue visitCallExpr(CallExpr& expr) = 0;
 };
 
 struct Stmt {
@@ -102,7 +111,14 @@ struct StmtVisitor {
 };
 
 struct CodeVisitor : public ExprVisitor, public StmtVisitor {
-    void visitCallExpr(CallExpr& expr) override;
+   private:
+    Player m_player;
+
+   public:
+    OptionalValue visitLiteralExpr(LiteralExpr& expr) override;
+    OptionalValue visitBinaryExpr(BinaryExpr& expr) override;
+    OptionalValue visitCallExpr(CallExpr& expr) override;
+
     void visitExprStmt(ExprStmt& stmt) override;
     void visitBlockStmt(BlockStmt& stmt) override;
 };
@@ -143,6 +159,55 @@ class Scanner {
             }
         }
     }
+    template <typename T, typename... Args>
+    std::unique_ptr<Expr> makeExpr(Args&&... args) {
+        return std::make_unique<T>(std::forward<Args>(args)...);
+    }
+    int getPrec() { return 0; }
+    std::unique_ptr<Expr> prattParse(int mininumPrecedence = 0) {
+        const std::unordered_map<TokenType, int> precedence = {
+            {TokenType::Add, 1},
+            {TokenType::Subtract, 1},
+            {TokenType::Multiply, 2},
+            {TokenType::Divide, 2},
+        };
+        Token left = consume();
+        // if (left.type == TokenType::LeftParen) {}
+        LiteralExpr::Type type;
+        switch (left.type) {
+            case TokenType::Integer:
+                type = LiteralExpr::Type::Integer;
+                break;
+            case TokenType::Float:
+                type = LiteralExpr::Type::Float;
+                break;
+            case TokenType::Boolean:
+                type = LiteralExpr::Type::Boolean;
+                break;
+                // case TokenType::Float:
+                //     type = LiteralExpr::Type::Float;
+        }
+        // std::unique_ptr<LiteralExpr> lhs = std::make_unique<LiteralExpr>(LiteralExpr(type, left.text));
+        std::unique_ptr<Expr> lhs = makeExpr<LiteralExpr>(type, left.text);
+        while (precedence.contains(peek().type) && precedence.at(peek().type) >= mininumPrecedence) {
+            Token op = consume();
+            std::unique_ptr<Expr> rhs = prattParse(precedence.at(op.type) + 1);
+            lhs.reset(new BinaryExpr(std::move(lhs), op.text, std::move(rhs)));
+        }
+        return lhs;
+    }
+    void addArguments(CallExpr& callExpr) {
+        switch (peek().type) {
+            // case TokenType::Identifier:
+            case TokenType::Float:
+            case TokenType::Integer:
+            case TokenType::LeftParen: {
+                callExpr.arguments.push_back(prattParse());
+            }
+            default:
+                return;
+        }
+    }
 
    public:
     BlockStmt scan() {
@@ -153,6 +218,7 @@ class Scanner {
                     CallExpr callExpr;
                     callExpr.identifier = current().text;
                     addModifiers(callExpr);
+                    addArguments(callExpr);
                     ExprStmt exprStmt(std::make_unique<CallExpr>(std::move(callExpr)));
                     block.statements.push_back(std::make_unique<ExprStmt>(std::move(exprStmt)));
                     break;
