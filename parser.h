@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -184,10 +185,11 @@ class Scanner {
             case TokenType::Boolean:
                 type = LiteralExpr::Type::Boolean;
                 break;
-                // case TokenType::Float:
-                //     type = LiteralExpr::Type::Float;
+                // case TokenType::String:
+                //     type = LiteralExpr::Type::String;
+            default:
+                throw std::runtime_error("Invalid token");
         }
-        // std::unique_ptr<LiteralExpr> lhs = std::make_unique<LiteralExpr>(LiteralExpr(type, left.text));
         std::unique_ptr<Expr> lhs = makeExpr<LiteralExpr>(type, left.text);
         while (precedence.contains(peek().type) && precedence.at(peek().type) >= mininumPrecedence) {
             Token op = consume();
