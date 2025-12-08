@@ -9,6 +9,7 @@
 void BlockStmt::accept(struct StmtVisitor& visitor) { visitor.visitBlockStmt(*this); }
 void ExprStmt::accept(struct StmtVisitor& visitor) { visitor.visitExprStmt(*this); }
 OptionalValue LiteralExpr::accept(struct ExprVisitor& visitor) { return visitor.visitLiteralExpr(*this); }
+OptionalValue UnaryExpr::accept(struct ExprVisitor& visitor) { return visitor.visitUnaryExpr(*this); }
 OptionalValue BinaryExpr::accept(struct ExprVisitor& visitor) { return visitor.visitBinaryExpr(*this); }
 OptionalValue CallExpr::accept(struct ExprVisitor& visitor) { return visitor.visitCallExpr(*this); }
 
@@ -39,7 +40,6 @@ OptionalValue CodeVisitor::visitLiteralExpr(LiteralExpr& expr) {
     }
     return std::nullopt;
 }
-
 template <typename... Ts>
 struct overloaded : Ts... {
     using Ts::operator()...;
@@ -53,6 +53,26 @@ T checkRhs(T rhs) {
     }
     return rhs;
 }
+
+OptionalValue CodeVisitor::visitUnaryExpr(UnaryExpr& expr) {
+    switch (expr.operation[0]) {
+        case '-': {
+            return std::visit(
+                overloaded{[](int lhs) -> OptionalValue { return -lhs; },
+                           [](float lhs) -> OptionalValue { return -lhs; },
+                           [](auto) -> OptionalValue { throw std::runtime_error("Invalid operands for unary minus"); }},
+                expr.operand->accept(*this).value());
+        }
+        case '+': {
+            return std::visit(
+                overloaded{[](int lhs) -> OptionalValue { return lhs; }, [](float lhs) -> OptionalValue { return lhs; },
+                           [](auto) -> OptionalValue { throw std::runtime_error("Invalid operands for unary plus"); }},
+                expr.operand->accept(*this).value());
+        }
+    }
+    return std::nullopt;
+}
+
 OptionalValue CodeVisitor::visitBinaryExpr(BinaryExpr& expr) {
     switch (expr.operation[0]) {
         case '+': {

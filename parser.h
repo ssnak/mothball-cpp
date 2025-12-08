@@ -36,7 +36,14 @@ struct CallExpr : public Expr {
     OptionalValue accept(struct ExprVisitor& visitor) override;
 };
 
-struct UnaryExpr : public Expr {};
+struct UnaryExpr : public Expr {
+    std::unique_ptr<Expr> operand;
+    std::string operation;
+    OptionalValue accept(struct ExprVisitor& visitor) override;
+    UnaryExpr() {}
+    explicit UnaryExpr(std::unique_ptr<Expr> operand, std::string& operation)
+        : operand(std::move(operand)), operation{operation} {}
+};
 
 struct BinaryExpr : public Expr {
     std::unique_ptr<Expr> lhs;
@@ -51,7 +58,7 @@ struct BinaryExpr : public Expr {
 
 struct ExprVisitor {
     virtual OptionalValue visitLiteralExpr(LiteralExpr& expr) = 0;
-    // virtual void visitUnaryExpr() = 0;
+    virtual OptionalValue visitUnaryExpr(UnaryExpr& expr) = 0;
     virtual OptionalValue visitBinaryExpr(BinaryExpr& expr) = 0;
     virtual OptionalValue visitCallExpr(CallExpr& expr) = 0;
 };
@@ -117,6 +124,7 @@ struct CodeVisitor : public ExprVisitor, public StmtVisitor {
 
    public:
     OptionalValue visitLiteralExpr(LiteralExpr& expr) override;
+    OptionalValue visitUnaryExpr(UnaryExpr& expr) override;
     OptionalValue visitBinaryExpr(BinaryExpr& expr) override;
     OptionalValue visitCallExpr(CallExpr& expr) override;
 
@@ -185,6 +193,9 @@ class Scanner {
             case TokenType::Boolean:
                 type = LiteralExpr::Type::Boolean;
                 break;
+            case TokenType::Add:
+            case TokenType::Subtract:
+                return makeExpr<UnaryExpr>(prattParse(), left.text);
                 // case TokenType::String:
                 //     type = LiteralExpr::Type::String;
             default:
@@ -203,7 +214,9 @@ class Scanner {
             // case TokenType::Identifier:
             case TokenType::Float:
             case TokenType::Integer:
-            case TokenType::LeftParen: {
+            case TokenType::LeftParen:
+            case TokenType::Add:
+            case TokenType::Subtract: {
                 callExpr.arguments.push_back(prattParse());
             }
             default:
