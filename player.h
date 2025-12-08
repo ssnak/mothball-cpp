@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <optional>
 #include <ostream>
+#include <queue>
 #include <string>
 
 #include "vector.h"
@@ -43,6 +44,7 @@ class Player {
     float m_lastRotation = 0.0f;
     float m_lastTurn = 0.0f;
     // TODO: add angle queue, and turn queue
+    std::queue<float> m_angles;
     bool m_airSprintDelay = true;
     bool m_sneakDelay = false;
     int8_t m_inertiaAxis = 1;
@@ -61,11 +63,6 @@ class Player {
                 float rotation, int speed, int slow, float sprintjumpBoost);
     bool hasModifier(Modifiers modifier) {
         return static_cast<u_int32_t>(m_modifiers) & static_cast<u_int32_t>(modifier);
-    }
-
-    float getAngle() {
-        // TODO: Implement getAngle
-        return m_rotation;
     }
 
     // x: forward, z: strafe
@@ -130,6 +127,16 @@ class Player {
    public:
     void move(int duration, std::optional<float> rotation, float rotationOffset, std::optional<float> slipperiness,
               bool isSprinting, bool isSneaking, std::optional<int> speed, std::optional<int> slow, State state);
+
+    float getAngle() {
+        // TODO: Implement getAngle
+        if (!m_angles.empty()) {
+            m_rotation = m_angles.front();
+            m_angles.pop();
+        }
+        return m_rotation;
+    }
+    void face(float angle) { m_rotation = angle; }
 
     void walk(int duration = 1, std::optional<float> rotation = std::nullopt,
               std::optional<float> slipperiness = std::nullopt, std::optional<int> speed = std::nullopt,

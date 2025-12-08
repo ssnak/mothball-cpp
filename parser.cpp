@@ -1,5 +1,6 @@
 #include "parser.h"
 
+#include <iomanip>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -95,6 +96,125 @@ OptionalValue CodeVisitor::visitBinaryExpr(BinaryExpr& expr) {
 }
 OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
     std::string identifier{expr.identifier};
+    if (identifier == "|") {
+        m_player.position.x = 0.0f;
+        m_player.position.z = 0.0f;
+        return std::nullopt;
+    } else if (identifier == "facing") {
+        if (auto args = std::move(expr.arguments); args.size() > 0) {
+            if (auto v = args[0]->accept(*this); v.has_value()) {
+                Value value = v.value();
+                std::visit(
+                    overloaded{[this](int val) { m_player.face(static_cast<float>(val)); },
+                               [this](float val) { m_player.face(val); },
+                               [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                               [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                    value);
+            } else {
+                std::cerr << "Error argument not recognized" << std::endl;
+            }
+        } else {
+            m_player.face(0.0f);
+        }
+        return std::nullopt;
+    } else if (identifier == "outx") {
+        if (auto args = std::move(expr.arguments); args.size() > 0) {
+            if (auto v = args[0]->accept(*this); v.has_value()) {
+                Value value = v.value();
+                std::visit(
+                    overloaded{[this](auto offset) {
+                                   if (offset >= m_player.position.x) {
+                                       std::cout << "X: " << offset << " - " << std::setprecision(m_player.precision)
+                                                 << offset - m_player.position.x << std::endl;
+                                   } else {
+                                       std::cout << "X: " << offset << " + " << std::setprecision(m_player.precision)
+                                                 << m_player.position.x - offset << std::endl;
+                                   }
+                               },
+                               [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                               [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                    value);
+            } else {
+                std::cerr << "Error argument not recognized" << std::endl;
+            }
+        } else {
+            std::cout << "X: " << std::setprecision(m_player.precision) << m_player.position.x << std::endl;
+        }
+        return std::nullopt;
+    } else if (identifier == "outz") {
+        if (auto args = std::move(expr.arguments); args.size() > 0) {
+            if (auto v = args[0]->accept(*this); v.has_value()) {
+                Value value = v.value();
+                std::visit(
+                    overloaded{[this](auto offset) {
+                                   if (offset >= m_player.position.z) {
+                                       std::cout << "Z: " << offset << " - " << std::setprecision(m_player.precision)
+                                                 << offset - m_player.position.z << std::endl;
+                                   } else {
+                                       std::cout << "Z: " << offset << " + " << std::setprecision(m_player.precision)
+                                                 << m_player.position.z - offset << std::endl;
+                                   }
+                               },
+                               [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                               [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                    value);
+            } else {
+                std::cerr << "Error argument not recognized" << std::endl;
+            }
+        } else {
+            std::cout << "Z: " << std::setprecision(m_player.precision) << m_player.position.z << std::endl;
+        }
+        return std::nullopt;
+    } else if (identifier == "outvx") {
+        if (auto args = std::move(expr.arguments); args.size() > 0) {
+            if (auto v = args[0]->accept(*this); v.has_value()) {
+                Value value = v.value();
+                std::visit(
+                    overloaded{[this](auto offset) {
+                                   if (offset >= m_player.velocity.x) {
+                                       std::cout << "Vx: " << offset << " - " << std::setprecision(m_player.precision)
+                                                 << offset - m_player.velocity.x << std::endl;
+                                   } else {
+                                       std::cout << "Vx: " << offset << " + " << std::setprecision(m_player.precision)
+                                                 << m_player.velocity.x - offset << std::endl;
+                                   }
+                               },
+                               [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                               [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                    value);
+            } else {
+                std::cerr << "Error argument not recognized" << std::endl;
+            }
+        } else {
+            std::cout << "Vx: " << std::setprecision(m_player.precision) << m_player.velocity.x << std::endl;
+        }
+        return std::nullopt;
+    } else if (identifier == "outvz") {
+        if (auto args = std::move(expr.arguments); args.size() > 0) {
+            if (auto v = args[0]->accept(*this); v.has_value()) {
+                Value value = v.value();
+                std::visit(
+                    overloaded{[this](auto offset) {
+                                   if (offset >= m_player.velocity.z) {
+                                       std::cout << "Vz: " << offset << " - " << std::setprecision(m_player.precision)
+                                                 << offset - m_player.velocity.z << std::endl;
+                                   } else {
+                                       std::cout << "Vz: " << offset << " + " << std::setprecision(m_player.precision)
+                                                 << m_player.velocity.z - offset << std::endl;
+                                   }
+                               },
+                               [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                               [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                    value);
+            } else {
+                std::cerr << "Error argument not recognized" << std::endl;
+            }
+        } else {
+            std::cout << "Vz: " << std::setprecision(m_player.precision) << m_player.velocity.z << std::endl;
+        }
+        return std::nullopt;
+    }
+
     bool isSneaking = false;
     bool isSprinting = false;
     State state = State::GROUNDED;
@@ -118,13 +238,13 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         state = State::AIRBORNE;
         slipperiness = 1.0f;
     }
-    std::cout << "Args: " << expr.arguments.size() << std::endl;
+    // std::cout << "Args: " << expr.arguments.size() << std::endl;
     int duration = 1;
     if (auto args = std::move(expr.arguments); args.size() > 0) {
         if (auto v = args[0]->accept(*this); v.has_value()) {
             Value value = v.value();
             std::visit(overloaded{[&duration](int val) { duration = val; },
-                                  [&duration](float val) { duration = static_cast<float>(val); },
+                                  [&duration](float val) { duration = static_cast<int>(val); },
                                   [](bool) { std::cerr << "Expected int got bool instead" << std::endl; },
                                   [](std::string) { std::cerr << "Expected int got string instead" << std::endl; }},
                        value);
