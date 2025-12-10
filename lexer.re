@@ -20,7 +20,7 @@ loop:
         modifier = ("["[a-zA-Z]+"]")|("."[wasd]{1,4});
         number = [0-9]+;
         boolean = "true"|"false";
-        string = "'".*"'";
+        string = "'"[^']*"'";
 
         @start string          { return Token(TokenType::String, s_token); }
         @start "let"           { return Token(TokenType::Let, s_token); }
