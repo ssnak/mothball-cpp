@@ -6,6 +6,7 @@ enum class TokenType {
     Modifier,
     Integer,
     Float,
+    String,
     LeftParen,
     RightParen,
     LeftBrace,

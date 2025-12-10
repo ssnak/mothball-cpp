@@ -216,17 +216,26 @@ class Scanner {
         return lhs;
     }
     void addArguments(CallExpr& callExpr) {
-        switch (peek().type) {
-            // case TokenType::Identifier:
-            case TokenType::Float:
-            case TokenType::Integer:
-            case TokenType::LeftParen:
-            case TokenType::Add:
-            case TokenType::Subtract: {
-                callExpr.arguments.push_back(prattParse());
+        Token token = peek();
+        while (true) {
+            switch (token.type) {
+                // case TokenType::Identifier:
+                case TokenType::String: {
+                    callExpr.arguments.push_back(makeExpr<LiteralExpr>(LiteralExpr::Type::String, consume().text));
+                    break;
+                }
+                case TokenType::Float:
+                case TokenType::Integer:
+                case TokenType::LeftParen:
+                case TokenType::Add:
+                case TokenType::Subtract: {
+                    callExpr.arguments.push_back(prattParse());
+                    break;
+                }
+                default:
+                    return;
             }
-            default:
-                return;
+            token = peek();
         }
     }
 
