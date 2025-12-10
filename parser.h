@@ -180,19 +180,26 @@ class Scanner {
             {TokenType::Multiply, 2},
             {TokenType::Divide, 2},
         };
+        std::unique_ptr<Expr> lhs;
         Token left = consume();
-        // if (left.type == TokenType::LeftParen) {}
-        LiteralExpr::Type type;
         switch (left.type) {
-            case TokenType::Integer:
-                type = LiteralExpr::Type::Integer;
+            case TokenType::Integer: {
+                lhs = makeExpr<LiteralExpr>(LiteralExpr::Type::Integer, left.text);
                 break;
-            case TokenType::Float:
-                type = LiteralExpr::Type::Float;
+            }
+            case TokenType::Float: {
+                lhs = makeExpr<LiteralExpr>(LiteralExpr::Type::Float, left.text);
                 break;
-            case TokenType::Boolean:
-                type = LiteralExpr::Type::Boolean;
+            }
+            case TokenType::Boolean: {
+                lhs = makeExpr<LiteralExpr>(LiteralExpr::Type::Boolean, left.text);
                 break;
+            }
+            case TokenType::LeftParen: {
+                lhs = prattParse();
+                if (consume().type != TokenType::RightParen) pos--;
+                break;
+            }
             case TokenType::Add:
             case TokenType::Subtract:
                 return makeExpr<UnaryExpr>(prattParse(), left.text);
@@ -201,11 +208,10 @@ class Scanner {
             default:
                 throw std::runtime_error("Invalid token");
         }
-        std::unique_ptr<Expr> lhs = makeExpr<LiteralExpr>(type, left.text);
         while (precedence.contains(peek().type) && precedence.at(peek().type) >= mininumPrecedence) {
             Token op = consume();
             std::unique_ptr<Expr> rhs = prattParse(precedence.at(op.type) + 1);
-            lhs.reset(new BinaryExpr(std::move(lhs), op.text, std::move(rhs)));
+            lhs = makeExpr<BinaryExpr>(std::move(lhs), op.text, std::move(rhs));
         }
         return lhs;
     }
