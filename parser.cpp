@@ -223,6 +223,19 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         }
         return std::nullopt;
     }
+    if (identifier == "print") {
+        if (args.size() > 0) {
+            for (auto& arg : args) {
+                std::visit(overloaded{[](auto arg) { std::cout << arg; },
+                                      [](std::string& str) { std::cout << str.substr(1, str.size() - 2); }},
+                           arg);
+            }
+            std::cout << std::endl;
+        } else {
+            std::cerr << "Nothing to print" << std::endl;
+        }
+        return std::nullopt;
+    }
 
     bool isSneaking = false;
     bool isSprinting = false;
@@ -247,7 +260,6 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         state = State::AIRBORNE;
         slipperiness = 1.0f;
     }
-    // std::cout << "Args: " << expr.arguments.size() << std::endl;
     int duration = 1;
     if (args.size() > 0) {
         std::visit(overloaded{[&duration](int val) { duration = val; },
@@ -258,6 +270,5 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
     }
     m_player.move(duration, std::nullopt, 0.0f, slipperiness, isSprinting, isSneaking, std::nullopt, std::nullopt,
                   state);
-    std::cout << m_player;
     return std::nullopt;
 }
