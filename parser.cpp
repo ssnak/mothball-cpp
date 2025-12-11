@@ -278,15 +278,31 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         state = State::AIRBORNE;
         slipperiness = 1.0f;
     }
+    float offset = 0.0f;
+    if (stringCheck(identifier, "45")) offset = 45.0f;
     int duration = 1;
+    std::optional<float> rotation = std::nullopt;
     if (args.size() > 0) {
-        std::visit(overloaded{[&duration](int val) { duration = val; },
-                              [&duration](float val) { duration = static_cast<int>(val); },
+        std::visit(overloaded{[&duration](int value) { duration = value; },
+                              [&duration](float value) { duration = static_cast<int>(value); },
                               [](bool) { std::cerr << "Expected int got bool instead" << std::endl; },
                               [](std::string) { std::cerr << "Expected int got string instead" << std::endl; }},
                    args[0]);
     }
-    m_player.move(duration, std::nullopt, 0.0f, slipperiness, isSprinting, isSneaking, std::nullopt, std::nullopt,
-                  state);
+    if (args.size() > 1) {
+        std::visit(overloaded{[&rotation](int value) { rotation = static_cast<float>(value); },
+                              [&rotation](float value) { rotation = value; },
+                              [](bool) { std::cerr << "Expected int got bool instead" << std::endl; },
+                              [](std::string) { std::cerr << "Expected int got string instead" << std::endl; }},
+                   args[1]);
+    }
+    if (offset == 45.0f && state == State::JUMPING) {
+        m_player.move(1, rotation, 0.0f, slipperiness, isSprinting, isSneaking, std::nullopt, std::nullopt, state);
+        m_player.move(duration - 1, rotation, offset, 1.0f, isSprinting, isSneaking, std::nullopt, std::nullopt,
+                      State::AIRBORNE);
+    } else {
+        m_player.move(duration, rotation, offset, slipperiness, isSprinting, isSneaking, std::nullopt, std::nullopt,
+                      state);
+    }
     return std::nullopt;
 }
