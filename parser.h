@@ -27,6 +27,12 @@ struct LiteralExpr : public Expr {
     LiteralExpr(Type type, std::string value) : type(type), value(value) {}
 };
 
+struct VarExpr : public Expr {
+    std::string identifier;
+    OptionalValue accept(struct ExprVisitor& visitor) override;
+    VarExpr(std::string identifier) : identifier(identifier) {}
+};
+
 struct CallExpr : public Expr {
    public:
     std::string identifier;
@@ -58,6 +64,7 @@ struct BinaryExpr : public Expr {
 
 struct ExprVisitor {
     virtual OptionalValue visitLiteralExpr(LiteralExpr& expr) = 0;
+    virtual OptionalValue visitVarExpr(VarExpr& expr) = 0;
     virtual OptionalValue visitUnaryExpr(UnaryExpr& expr) = 0;
     virtual OptionalValue visitBinaryExpr(BinaryExpr& expr) = 0;
     virtual OptionalValue visitCallExpr(CallExpr& expr) = 0;
@@ -114,43 +121,50 @@ struct StmtVisitor {
     // virtual void visitIfStmt() = 0;
     // virtual void visitForStmt() = 0;
     // virtual void visitWhileStmt() = 0;
-    // virtual void visitVarDeclStmt() = 0;
+    virtual void visitVarDeclStmt(VarDeclStmt& stmt) = 0;
     // virtual void visitFuncDeclStmt() = 0;
 };
 
 struct CodeVisitor : public ExprVisitor, public StmtVisitor {
    private:
+    struct Var {
+        std::string identifier;
+        OptionalValue value;
+    };
+    std::vector<Var> m_variables;
     Player m_player;
 
    public:
     OptionalValue visitLiteralExpr(LiteralExpr& expr) override;
+    OptionalValue visitVarExpr(VarExpr& expr) override;
     OptionalValue visitUnaryExpr(UnaryExpr& expr) override;
     OptionalValue visitBinaryExpr(BinaryExpr& expr) override;
     OptionalValue visitCallExpr(CallExpr& expr) override;
 
     void visitExprStmt(ExprStmt& stmt) override;
     void visitBlockStmt(BlockStmt& stmt) override;
+    void visitVarDeclStmt(VarDeclStmt& stmt) override;
 };
 
 class Scanner {
    private:
-    std::vector<Token> tokens;
-    Lexer lexer;
-    size_t pos = -1;
-    Token current() { return tokens[pos]; }
+    std::vector<Token> m_tokens;
+    Lexer m_lexer;
+    size_t m_pos = -1;
+    Token& current() { return m_tokens[m_pos]; }
     Token consume() {
         Token token;
-        if (++pos >= tokens.size()) {
-            token = lexer.next();
-            tokens.push_back(token);
+        if (++m_pos >= m_tokens.size()) {
+            token = m_lexer.next();
+            m_tokens.push_back(token);
         } else {
-            token = tokens[pos];
+            token = m_tokens[m_pos];
         }
         return token;
     }
     Token peek() {
         Token token = consume();
-        pos--;
+        m_pos--;
         return token;
     }
     // bool accept();
@@ -197,12 +211,21 @@ class Scanner {
             }
             case TokenType::LeftParen: {
                 lhs = prattParse();
-                if (consume().type != TokenType::RightParen) pos--;
+                if (consume().type != TokenType::RightParen) m_pos--;
                 break;
             }
             case TokenType::Add:
             case TokenType::Subtract:
                 return makeExpr<UnaryExpr>(prattParse(), left.text);
+            case TokenType::Identifier: {
+                if (!isFunction(left)) {
+                    lhs = makeExpr<VarExpr>(left.text);
+                    break;
+                }
+                // TODO: Handle function calls inside expressions
+                throw std::runtime_error("Function calls inside expressions are not implemented");
+            }
+                // TODO: Implement string operations
                 // case TokenType::String:
                 //     type = LiteralExpr::Type::String;
             default:
@@ -219,9 +242,13 @@ class Scanner {
         Token token = peek();
         while (true) {
             switch (token.type) {
-                // case TokenType::Identifier:
                 case TokenType::String: {
                     callExpr.arguments.push_back(makeExpr<LiteralExpr>(LiteralExpr::Type::String, consume().text));
+                    break;
+                }
+                case TokenType::Identifier: {
+                    if (isFunction(token)) return;
+                    callExpr.arguments.push_back(prattParse());
                     break;
                 }
                 case TokenType::Float:
@@ -239,18 +266,52 @@ class Scanner {
         }
     }
 
+    std::unique_ptr<Expr> createCallExpr() {
+        CallExpr callExpr;
+        callExpr.identifier = current().text;
+        addModifiers(callExpr);
+        addArguments(callExpr);
+        return std::make_unique<CallExpr>(std::move(callExpr));
+    }
+
+    bool isFunction(Token& token) {
+        std::string identifiers[] = {"|", "facing", "outx", "outz", "outvx", "outvz", "print"};
+        std::string starts[] = {"sneak", "walk", "sprint", "stop", "jump", "air"};
+        for (auto& identifier : identifiers) {
+            if (identifier == token.text) {
+                return true;
+            }
+        }
+        for (auto& start : starts) {
+            if (token.text.starts_with(start)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
    public:
     BlockStmt scan() {
         BlockStmt block;
         while (consume().type != TokenType::EndOfFile) {
             switch (current().type) {
                 case TokenType::Identifier: {
-                    CallExpr callExpr;
-                    callExpr.identifier = current().text;
-                    addModifiers(callExpr);
-                    addArguments(callExpr);
-                    ExprStmt exprStmt(std::make_unique<CallExpr>(std::move(callExpr)));
-                    block.statements.push_back(std::make_unique<ExprStmt>(std::move(exprStmt)));
+                    if (isFunction(current())) {
+                        ExprStmt exprStmt = createCallExpr();
+                        block.statements.push_back(std::make_unique<ExprStmt>(std::move(exprStmt)));
+                    }
+                    break;
+                    // variable asignment etc
+                }
+                case TokenType::Let: {
+                    Token token = consume();
+                    if (token.type != TokenType::Identifier) throw std::runtime_error("Invalid variable name");
+
+                    VarDeclStmt varDecl;
+                    varDecl.identifier = token.text;
+                    if (consume().type != TokenType::Assign) throw std::runtime_error("Expected =");
+                    varDecl.value = prattParse();
+                    block.statements.push_back(std::make_unique<VarDeclStmt>(std::move(varDecl)));
                     break;
                 }
                 default:
@@ -259,5 +320,5 @@ class Scanner {
         }
         return block;
     }
-    Scanner(const std::string& input) : lexer(input) {}
+    Scanner(const std::string& input) : m_lexer(input) {}
 };

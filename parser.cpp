@@ -8,16 +8,23 @@
 
 void BlockStmt::accept(struct StmtVisitor& visitor) { visitor.visitBlockStmt(*this); }
 void ExprStmt::accept(struct StmtVisitor& visitor) { visitor.visitExprStmt(*this); }
+void VarDeclStmt::accept(struct StmtVisitor& visitor) { visitor.visitVarDeclStmt(*this); }
 OptionalValue LiteralExpr::accept(struct ExprVisitor& visitor) { return visitor.visitLiteralExpr(*this); }
+OptionalValue VarExpr::accept(struct ExprVisitor& visitor) { return visitor.visitVarExpr(*this); }
 OptionalValue UnaryExpr::accept(struct ExprVisitor& visitor) { return visitor.visitUnaryExpr(*this); }
 OptionalValue BinaryExpr::accept(struct ExprVisitor& visitor) { return visitor.visitBinaryExpr(*this); }
 OptionalValue CallExpr::accept(struct ExprVisitor& visitor) { return visitor.visitCallExpr(*this); }
 
 void CodeVisitor::visitExprStmt(ExprStmt& stmt) { stmt.expression->accept(*this); }
 void CodeVisitor::visitBlockStmt(BlockStmt& stmt) {
+    size_t variablesSize = m_variables.size();
     for (const auto& it : stmt.statements) {
         it.get()->accept(*this);
     }
+    m_variables.resize(variablesSize);
+}
+void CodeVisitor::visitVarDeclStmt(VarDeclStmt& stmt) {
+    m_variables.push_back(Var{stmt.identifier, stmt.value->accept(*this)});
 }
 
 bool stringCheck(std::string& str, std::string sub) {
@@ -40,6 +47,17 @@ OptionalValue CodeVisitor::visitLiteralExpr(LiteralExpr& expr) {
     }
     return std::nullopt;
 }
+
+OptionalValue CodeVisitor::visitVarExpr(VarExpr& expr) {
+    for (int i = m_variables.size() - 1; i >= 0; i--) {
+        if (m_variables[i].identifier == expr.identifier) {
+            return m_variables[i].value;
+        }
+    }
+    std::cerr << "Variable not recognized" << std::endl;
+    return std::nullopt;
+}
+
 template <typename... Ts>
 struct overloaded : Ts... {
     using Ts::operator()...;
@@ -53,7 +71,6 @@ T checkRhs(T rhs) {
     }
     return rhs;
 }
-
 OptionalValue CodeVisitor::visitUnaryExpr(UnaryExpr& expr) {
     switch (expr.operation[0]) {
         case '-': {
@@ -114,6 +131,7 @@ OptionalValue CodeVisitor::visitBinaryExpr(BinaryExpr& expr) {
     }
     return std::nullopt;
 }
+
 OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
     std::string identifier{expr.identifier};
     if (identifier == "|") {
@@ -127,7 +145,7 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         if (auto result = arg->accept(*this); result.has_value()) {
             args.push_back(result.value());
         } else {
-            std::cerr << "Error argument not recognized" << std::endl;
+            std::cerr << "Error invalid argument" << std::endl;
         }
     }
 
