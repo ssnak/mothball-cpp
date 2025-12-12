@@ -8,6 +8,7 @@
 
 void BlockStmt::accept(struct StmtVisitor& visitor) { visitor.visitBlockStmt(*this); }
 void ExprStmt::accept(struct StmtVisitor& visitor) { visitor.visitExprStmt(*this); }
+void ForStmt::accept(struct StmtVisitor& visitor) { visitor.visitForStmt(*this); }
 void VarDeclStmt::accept(struct StmtVisitor& visitor) { visitor.visitVarDeclStmt(*this); }
 OptionalValue LiteralExpr::accept(struct ExprVisitor& visitor) { return visitor.visitLiteralExpr(*this); }
 OptionalValue VarExpr::accept(struct ExprVisitor& visitor) { return visitor.visitVarExpr(*this); }
@@ -15,6 +16,12 @@ OptionalValue UnaryExpr::accept(struct ExprVisitor& visitor) { return visitor.vi
 OptionalValue BinaryExpr::accept(struct ExprVisitor& visitor) { return visitor.visitBinaryExpr(*this); }
 OptionalValue CallExpr::accept(struct ExprVisitor& visitor) { return visitor.visitCallExpr(*this); }
 
+template <typename... Ts>
+struct overloaded : Ts... {
+    using Ts::operator()...;
+};
+template <typename... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
 void CodeVisitor::visitExprStmt(ExprStmt& stmt) { stmt.expression->accept(*this); }
 void CodeVisitor::visitBlockStmt(BlockStmt& stmt) {
     size_t variablesSize = m_variables.size();
@@ -22,6 +29,16 @@ void CodeVisitor::visitBlockStmt(BlockStmt& stmt) {
         it.get()->accept(*this);
     }
     m_variables.resize(variablesSize);
+}
+void CodeVisitor::visitForStmt(ForStmt& stmt) {
+    int times = 0;
+    std::visit(
+        overloaded{[&times](int value) { times = value; }, [&times](float value) { times = static_cast<int>(value); },
+                   [](auto) { throw std::runtime_error("Invalid expression for loop"); }},
+        stmt.condition->accept(*this).value());
+    for (int i = 0; i < times; i++) {
+        stmt.body->accept(*this);
+    }
 }
 void CodeVisitor::visitVarDeclStmt(VarDeclStmt& stmt) {
     m_variables.push_back(Var{stmt.identifier, stmt.value->accept(*this)});
@@ -58,12 +75,6 @@ OptionalValue CodeVisitor::visitVarExpr(VarExpr& expr) {
     return std::nullopt;
 }
 
-template <typename... Ts>
-struct overloaded : Ts... {
-    using Ts::operator()...;
-};
-template <typename... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
 template <typename T>
 T checkRhs(T rhs) {
     if (rhs == 0) {

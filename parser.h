@@ -119,7 +119,7 @@ struct StmtVisitor {
     virtual void visitExprStmt(ExprStmt& stmt) = 0;
     virtual void visitBlockStmt(BlockStmt& stmt) = 0;
     // virtual void visitIfStmt() = 0;
-    // virtual void visitForStmt() = 0;
+    virtual void visitForStmt(ForStmt& stmt) = 0;
     // virtual void visitWhileStmt() = 0;
     virtual void visitVarDeclStmt(VarDeclStmt& stmt) = 0;
     // virtual void visitFuncDeclStmt() = 0;
@@ -143,6 +143,7 @@ struct CodeVisitor : public ExprVisitor, public StmtVisitor {
 
     void visitExprStmt(ExprStmt& stmt) override;
     void visitBlockStmt(BlockStmt& stmt) override;
+    void visitForStmt(ForStmt& stmt) override;
     void visitVarDeclStmt(VarDeclStmt& stmt) override;
 };
 
@@ -299,7 +300,7 @@ class Scanner {
    public:
     BlockStmt scan() {
         BlockStmt block;
-        while (consume().type != TokenType::EndOfFile) {
+        while (consume().type != TokenType::EndOfFile && current().type != TokenType::RightBrace) {
             switch (current().type) {
                 case TokenType::Builtin:
                 case TokenType::Movement:
@@ -320,6 +321,14 @@ class Scanner {
                     if (consume().type != TokenType::Assign) throw std::runtime_error("Expected =");
                     varDecl.value = prattParse();
                     block.statements.push_back(std::make_unique<VarDeclStmt>(std::move(varDecl)));
+                    break;
+                }
+                case TokenType::For: {
+                    ForStmt forStmt;
+                    forStmt.condition = prattParse();
+                    if (consume().type != TokenType::LeftBrace) throw std::runtime_error("Expected {");
+                    forStmt.body = std::make_unique<BlockStmt>(scan());
+                    block.statements.push_back(std::make_unique<ForStmt>(std::move(forStmt)));
                     break;
                 }
                 default:
