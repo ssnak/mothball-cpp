@@ -195,7 +195,7 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                                   [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
                        args[0]);
         } else {
-            std::cout << "Z: " << std::setprecision(m_player.precision) << m_player.position.z << std::endl;
+            std::cout << "z: " << std::setprecision(m_player.precision) << m_player.position.z << std::endl;
         }
         return std::nullopt;
     }

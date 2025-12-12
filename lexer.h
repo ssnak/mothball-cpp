@@ -3,6 +3,8 @@
 #include <string>
 enum class TokenType {
     Identifier,
+    Builtin,
+    Movement,
     Modifier,
     Integer,
     Float,

@@ -16,11 +16,13 @@ loop:
         re2c:define:YYCURSOR = m_cursor;
         re2c:define:YYLIMIT = m_limit;
         re2c:tags = 1;
-        identifier = "|"|([a-zA-Z]+"45"?);
         modifier = ("["[a-zA-Z]+"]")|("."[wasd]{1,4});
-        number = [0-9]+;
+        number = "0"|[1-9][0-9]*;
         boolean = "true"|"false";
         string = "'"[^']*"'";
+        identifier = [a-zA-Z_]([a-zA-Z_]|number)*;
+        builtin = ("|"|"facing"|"outx"|"outz"|"xmm"|"zmm"|"xb"|"zb"|"outvx"|"outvz"|"print");
+        movement = ("sn"("eak")?)?("s"("print")?|"st"("op")?|"w"("alk")?)?("j"("ump")?|"a"("ir")?)?"45"?;
 
         @start string          { return Token(TokenType::String, s_token); }
         @start "let"           { return Token(TokenType::Let, s_token); }
@@ -40,11 +42,13 @@ loop:
         "-"                    { return Token(TokenType::Subtract, c_token); }
         "*"                    { return Token(TokenType::Multiply, c_token); }
         "/"                    { return Token(TokenType::Divide, c_token); }
+        @start builtin         { return Token(TokenType::Builtin, s_token); }
+        @start movement        { return Token(TokenType::Movement, s_token); }
         @start identifier      { return Token(TokenType::Identifier, s_token); }
         @start modifier        { return Token(TokenType::Modifier, s_token); }
         @start number          { return Token(TokenType::Integer, s_token); }
         @start number"."number { return Token(TokenType::Float, s_token); }
-        [ \t\n\r;"\"]+         { goto loop; }
+        [ \t\n\r;"\\"]+        { goto loop; }
         *                      { return Token(TokenType::Unknown, "UNKNOWN"); }
         $                      { return Token(TokenType::EndOfFile, "EOF"); }
     */

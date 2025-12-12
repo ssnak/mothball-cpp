@@ -151,6 +151,13 @@ class Scanner {
     std::vector<Token> m_tokens;
     Lexer m_lexer;
     size_t m_pos = -1;
+    struct FunctionData {
+        std::string identifier;
+        size_t numberOfArguments;
+    };
+    std::vector<FunctionData> m_functions;
+
+   private:
     Token& current() { return m_tokens[m_pos]; }
     Token consume() {
         Token token;
@@ -218,10 +225,12 @@ class Scanner {
             case TokenType::Subtract:
                 return makeExpr<UnaryExpr>(prattParse(), left.text);
             case TokenType::Identifier: {
-                if (!isFunction(left)) {
+                if (isFunction(left)) {
+                    lhs = createCallExpr();
+                } else {
                     lhs = makeExpr<VarExpr>(left.text);
-                    break;
                 }
+                break;
                 // TODO: Handle function calls inside expressions
                 throw std::runtime_error("Function calls inside expressions are not implemented");
             }
@@ -239,18 +248,22 @@ class Scanner {
         return lhs;
     }
     void addArguments(CallExpr& callExpr) {
+        int argumentsLeft = -1;
+        if (current().type == TokenType::Identifier) {
+            for (auto& functionData : m_functions) {
+                if (current().text == functionData.identifier) {
+                    argumentsLeft = functionData.numberOfArguments;
+                }
+            }
+        }
         Token token = peek();
-        while (true) {
+        while (argumentsLeft == -1 || argumentsLeft > 0) {
             switch (token.type) {
                 case TokenType::String: {
                     callExpr.arguments.push_back(makeExpr<LiteralExpr>(LiteralExpr::Type::String, consume().text));
                     break;
                 }
-                case TokenType::Identifier: {
-                    if (isFunction(token)) return;
-                    callExpr.arguments.push_back(prattParse());
-                    break;
-                }
+                case TokenType::Identifier:
                 case TokenType::Float:
                 case TokenType::Integer:
                 case TokenType::LeftParen:
@@ -263,6 +276,7 @@ class Scanner {
                     return;
             }
             token = peek();
+            if (argumentsLeft > 0) argumentsLeft--;
         }
     }
 
@@ -275,18 +289,9 @@ class Scanner {
     }
 
     bool isFunction(Token& token) {
-        std::string identifiers[] = {"|",   "facing", "outx", "outz", "outvx", "outvz",
-                                     "xmm", "zmm",    "xb",   "zb",   "print"};
-        std::string starts[] = {"sneak", "walk", "sprint", "stop", "jump", "air"};
-        for (auto& identifier : identifiers) {
-            if (identifier == token.text) {
-                return true;
-            }
-        }
-        for (auto& start : starts) {
-            if (token.text.starts_with(start)) {
-                return true;
-            }
+        if (token.type == TokenType::Builtin || token.type == TokenType::Movement) return true;
+        for (auto& functionData : m_functions) {
+            if (token.text == functionData.identifier) return true;
         }
         return false;
     }
@@ -296,6 +301,8 @@ class Scanner {
         BlockStmt block;
         while (consume().type != TokenType::EndOfFile) {
             switch (current().type) {
+                case TokenType::Builtin:
+                case TokenType::Movement:
                 case TokenType::Identifier: {
                     if (isFunction(current())) {
                         ExprStmt exprStmt = createCallExpr();
