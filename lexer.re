@@ -21,7 +21,7 @@ loop:
         boolean = "true"|"false";
         string = "'"[^']*"'";
         identifier = [a-zA-Z_]([a-zA-Z_]|number)*;
-        builtin = ("|"|"facing"|"outx"|"outz"|"xmm"|"zmm"|"xb"|"zb"|"outvx"|"outvz"|"print");
+        builtin = ("|"|"f"("acing")?|"outx"|"outz"|"xmm"|"zmm"|"xb"|"zb"|"outvx"|"outvz"|"print");
         movement = ("sn"("eak")?)?("s"("print")?|"st"("op")?|"w"("alk")?)?("j"("ump")?|"a"("ir")?)?"45"?;
 
         @start string          { return Token(TokenType::String, s_token); }

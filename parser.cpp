@@ -160,7 +160,7 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         }
     }
 
-    if (identifier == "facing") {
+    if (identifier == "facing" || identifier == "f") {
         if (args.size() > 0) {
             std::visit(overloaded{[this](int val) { m_player.face(static_cast<float>(val)); },
                                   [this](float val) { m_player.face(val); },
@@ -385,19 +385,19 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
     m_player.inputs = expr.inputs;
     if (m_player.inputs.empty()) m_player.inputs = "w";
     // std::vector<std::vector<std::string>> keywords{{"sneak"}, {"walk", "sprint", "stop"}, {"jump", "air", "ground"}};
-    if (stringCheck(identifier, "sneak")) {
+    if (stringCheck(identifier, "sneak") || stringCheck(identifier, "sn")) {
         isSneaking = true;
     }
-    if (stringCheck(identifier, "sprint")) {
-        isSprinting = true;
-    } else if (stringCheck(identifier, "stop")) {
+    if (stringCheck(identifier, "stop") || stringCheck(identifier, "st")) {
         m_player.inputs = "";
+    } else if (stringCheck(identifier, "sprint") || stringCheck(identifier, "s")) {
+        isSprinting = true;
     } else {
-        stringCheck(identifier, "walk");
+        stringCheck(identifier, "walk") || stringCheck(identifier, "w");
     }
-    if (stringCheck(identifier, "jump")) {
+    if (stringCheck(identifier, "jump") || stringCheck(identifier, "j")) {
         state = State::JUMPING;
-    } else if (stringCheck(identifier, "air")) {
+    } else if (stringCheck(identifier, "air") || stringCheck(identifier, "a")) {
         state = State::AIRBORNE;
         slipperiness = 1.0f;
     }
