@@ -275,7 +275,8 @@ class Scanner {
     }
 
     bool isFunction(Token& token) {
-        std::string identifiers[] = {"|", "facing", "outx", "outz", "outvx", "outvz", "xmm", "zmm", "print"};
+        std::string identifiers[] = {"|",   "facing", "outx", "outz", "outvx", "outvz",
+                                     "xmm", "zmm",    "xb",   "zb",   "print"};
         std::string starts[] = {"sneak", "walk", "sprint", "stop", "jump", "air"};
         for (auto& identifier : identifiers) {
             if (identifier == token.text) {

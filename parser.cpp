@@ -257,6 +257,60 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         }
         return std::nullopt;
     }
+    if (identifier == "xb") {
+        float pos = m_player.position.x;
+        if (pos >= 0.0f) {
+            pos += 0.6f;
+        } else {
+            pos -= 0.6f;
+        }
+        if (args.size() > 0) {
+            std::visit(overloaded{[this, &pos](auto offset) {
+                                      if (offset >= pos) {
+                                          std::cout << "x(b): " << offset << " - "
+                                                    << std::setprecision(m_player.precision) << offset - pos
+                                                    << std::endl;
+                                      } else {
+                                          std::cout << "x(b): " << offset << " + "
+                                                    << std::setprecision(m_player.precision) << pos - offset
+                                                    << std::endl;
+                                      }
+                                  },
+                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                       args[0]);
+        } else {
+            std::cout << "x(b): " << std::setprecision(m_player.precision) << pos << std::endl;
+        }
+        return std::nullopt;
+    }
+    if (identifier == "zb") {
+        float pos = m_player.position.z;
+        if (pos >= 0.0f) {
+            pos += 0.6f;
+        } else {
+            pos -= 0.6f;
+        }
+        if (args.size() > 0) {
+            std::visit(overloaded{[this, &pos](auto offset) {
+                                      if (offset >= pos) {
+                                          std::cout << "z(b): " << offset << " - "
+                                                    << std::setprecision(m_player.precision) << offset - pos
+                                                    << std::endl;
+                                      } else {
+                                          std::cout << "z(b): " << offset << " + "
+                                                    << std::setprecision(m_player.precision) << pos - offset
+                                                    << std::endl;
+                                      }
+                                  },
+                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                       args[0]);
+        } else {
+            std::cout << "z(b): " << std::setprecision(m_player.precision) << pos << std::endl;
+        }
+        return std::nullopt;
+    }
     if (identifier == "outvx") {
         if (args.size() > 0) {
             std::visit(overloaded{[this](auto offset) {
