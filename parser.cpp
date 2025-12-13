@@ -172,6 +172,24 @@ OptionalValue CodeVisitor::visitBinaryExpr(BinaryExpr& expr) {
                                          throw std::runtime_error("Invalid operands for not equals");
                                      }},
                           expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == ">=") {
+        return std::visit(overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs >= rhs; },
+                                     [](float lhs, float rhs) -> OptionalValue { return lhs >= rhs; },
+                                     [](int lhs, float rhs) -> OptionalValue { return lhs >= rhs; },
+                                     [](float lhs, int rhs) -> OptionalValue { return lhs >= rhs; },
+                                     [](auto, auto) -> OptionalValue {
+                                         throw std::runtime_error("Invalid operands for greater than or equals");
+                                     }},
+                          expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == "<=") {
+        return std::visit(overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs <= rhs; },
+                                     [](float lhs, float rhs) -> OptionalValue { return lhs <= rhs; },
+                                     [](int lhs, float rhs) -> OptionalValue { return lhs <= rhs; },
+                                     [](float lhs, int rhs) -> OptionalValue { return lhs <= rhs; },
+                                     [](auto, auto) -> OptionalValue {
+                                         throw std::runtime_error("Invalid operands for less than or equals");
+                                     }},
+                          expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
     } else if (expr.operation == "&&") {
         // TODO: Short circuit if first operand is false
         return std::visit(
@@ -182,7 +200,7 @@ OptionalValue CodeVisitor::visitBinaryExpr(BinaryExpr& expr) {
         // TODO: Short circuit if first operand is true
         return std::visit(
             overloaded{[](bool lhs, bool rhs) -> OptionalValue { return lhs || rhs; },
-                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for and"); }},
+                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for or"); }},
             expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
     }
 

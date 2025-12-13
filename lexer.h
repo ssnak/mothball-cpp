@@ -24,6 +24,8 @@ enum class TokenType {
     Boolean,
     Equals,
     NotEquals,
+    GreaterThanOrEquals,
+    LessThanOrEquals,
     LessThan,
     GreaterThan,
     And,
