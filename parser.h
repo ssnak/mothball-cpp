@@ -236,7 +236,8 @@ class Scanner {
             }
             case TokenType::Add:
             case TokenType::Subtract:
-                return makeExpr<UnaryExpr>(prattParse(), left.text);
+                lhs = makeExpr<UnaryExpr>(prattParse(10), left.text);
+                break;
             case TokenType::Identifier: {
                 if (isFunction(left)) {
                     lhs = createCallExpr();
