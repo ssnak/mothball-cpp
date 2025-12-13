@@ -102,44 +102,90 @@ OptionalValue CodeVisitor::visitUnaryExpr(UnaryExpr& expr) {
 }
 
 OptionalValue CodeVisitor::visitBinaryExpr(BinaryExpr& expr) {
-    switch (expr.operation[0]) {
-        case '+': {
-            return std::visit(
-                overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs + rhs; },
-                           [](float lhs, float rhs) -> OptionalValue { return lhs + rhs; },
-                           [](int lhs, float rhs) -> OptionalValue { return lhs + rhs; },
-                           [](float lhs, int rhs) -> OptionalValue { return lhs + rhs; },
-                           [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
-                expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
-        }
-        case '-': {
-            return std::visit(
-                overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs - rhs; },
-                           [](float lhs, float rhs) -> OptionalValue { return lhs - rhs; },
-                           [](int lhs, float rhs) -> OptionalValue { return lhs - rhs; },
-                           [](float lhs, int rhs) -> OptionalValue { return lhs - rhs; },
-                           [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
-                expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
-        }
-        case '*': {
-            return std::visit(
-                overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs * rhs; },
-                           [](float lhs, float rhs) -> OptionalValue { return lhs * rhs; },
-                           [](int lhs, float rhs) -> OptionalValue { return lhs * rhs; },
-                           [](float lhs, int rhs) -> OptionalValue { return lhs * rhs; },
-                           [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
-                expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
-        }
-        case '/': {
-            return std::visit(
-                overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
-                           [](float lhs, float rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
-                           [](int lhs, float rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
-                           [](float lhs, int rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
-                           [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
-                expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
-        }
+    if (expr.operation == "+") {
+        return std::visit(
+            overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs + rhs; },
+                       [](float lhs, float rhs) -> OptionalValue { return lhs + rhs; },
+                       [](int lhs, float rhs) -> OptionalValue { return lhs + rhs; },
+                       [](float lhs, int rhs) -> OptionalValue { return lhs + rhs; },
+                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
+            expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == "-") {
+        return std::visit(
+            overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs - rhs; },
+                       [](float lhs, float rhs) -> OptionalValue { return lhs - rhs; },
+                       [](int lhs, float rhs) -> OptionalValue { return lhs - rhs; },
+                       [](float lhs, int rhs) -> OptionalValue { return lhs - rhs; },
+                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
+            expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == "*") {
+        return std::visit(
+            overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs * rhs; },
+                       [](float lhs, float rhs) -> OptionalValue { return lhs * rhs; },
+                       [](int lhs, float rhs) -> OptionalValue { return lhs * rhs; },
+                       [](float lhs, int rhs) -> OptionalValue { return lhs * rhs; },
+                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
+            expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == "/") {
+        return std::visit(
+            overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
+                       [](float lhs, float rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
+                       [](int lhs, float rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
+                       [](float lhs, int rhs) -> OptionalValue { return lhs / checkRhs(rhs); },
+                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for add"); }},
+            expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == "<") {
+        return std::visit(
+            overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs < rhs; },
+                       [](float lhs, float rhs) -> OptionalValue { return lhs < rhs; },
+                       [](int lhs, float rhs) -> OptionalValue { return lhs < rhs; },
+                       [](float lhs, int rhs) -> OptionalValue { return lhs < rhs; },
+                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for less than"); }},
+            expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == ">") {
+        return std::visit(overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs > rhs; },
+                                     [](float lhs, float rhs) -> OptionalValue { return lhs > rhs; },
+                                     [](int lhs, float rhs) -> OptionalValue { return lhs > rhs; },
+                                     [](float lhs, int rhs) -> OptionalValue { return lhs > rhs; },
+                                     [](auto, auto) -> OptionalValue {
+                                         throw std::runtime_error("Invalid operands for greater than");
+                                     }},
+                          expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == "==") {
+        return std::visit(
+            overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs == rhs; },
+                       [](float lhs, float rhs) -> OptionalValue { return lhs == rhs; },
+                       [](int lhs, float rhs) -> OptionalValue { return lhs == rhs; },
+                       [](float lhs, int rhs) -> OptionalValue { return lhs == rhs; },
+                       [](bool lhs, bool rhs) -> OptionalValue { return lhs == rhs; },
+                       [](std::string lhs, std::string rhs) -> OptionalValue { return lhs == rhs; },
+                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for equals"); }},
+            expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == "!=") {
+        return std::visit(overloaded{[](int lhs, int rhs) -> OptionalValue { return lhs != rhs; },
+                                     [](float lhs, float rhs) -> OptionalValue { return lhs != rhs; },
+                                     [](int lhs, float rhs) -> OptionalValue { return lhs != rhs; },
+                                     [](float lhs, int rhs) -> OptionalValue { return lhs != rhs; },
+                                     [](bool lhs, bool rhs) -> OptionalValue { return lhs != rhs; },
+                                     [](std::string lhs, std::string rhs) -> OptionalValue { return lhs != rhs; },
+                                     [](auto, auto) -> OptionalValue {
+                                         throw std::runtime_error("Invalid operands for not equals");
+                                     }},
+                          expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == "&&") {
+        // TODO: Short circuit if first operand is false
+        return std::visit(
+            overloaded{[](bool lhs, bool rhs) -> OptionalValue { return lhs && rhs; },
+                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for and"); }},
+            expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
+    } else if (expr.operation == "||") {
+        // TODO: Short circuit if first operand is true
+        return std::visit(
+            overloaded{[](bool lhs, bool rhs) -> OptionalValue { return lhs || rhs; },
+                       [](auto, auto) -> OptionalValue { throw std::runtime_error("Invalid operands for and"); }},
+            expr.lhs->accept(*this).value(), expr.rhs->accept(*this).value());
     }
+
     return std::nullopt;
 }
 
@@ -391,9 +437,10 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
     if (identifier == "print") {
         if (args.size() > 0) {
             for (auto& arg : args) {
-                std::visit(overloaded{[](auto arg) { std::cout << arg; },
-                                      [](std::string& str) { std::cout << str.substr(1, str.size() - 2); }},
-                           arg);
+                std::visit(
+                    overloaded{[](auto arg) { std::cout << arg; }, [](bool arg) { std::cout << std::boolalpha << arg; },
+                               [](std::string& str) { std::cout << str.substr(1, str.size() - 2); }},
+                    arg);
             }
             std::cout << std::endl;
         } else {

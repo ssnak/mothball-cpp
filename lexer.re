@@ -31,6 +31,9 @@ loop:
         @start "if"            { return Token(TokenType::If, s_token); }
         @start boolean         { return Token(TokenType::Boolean, s_token); }
         @start "=="            { return Token(TokenType::Equals, s_token); }
+        @start "!="            { return Token(TokenType::NotEquals, s_token); }
+        @start "&&"            { return Token(TokenType::And, s_token); }
+        @start "||"            { return Token(TokenType::Or, s_token); }
         "="                    { return Token(TokenType::Assign, c_token); }
         ">"                    { return Token(TokenType::GreaterThan, c_token); }
         "<"                    { return Token(TokenType::LessThan, c_token); }

@@ -197,10 +197,9 @@ class Scanner {
     int getPrec() { return 0; }
     std::unique_ptr<Expr> prattParse(int mininumPrecedence = 0) {
         const std::unordered_map<TokenType, int> precedence = {
-            {TokenType::Add, 1},
-            {TokenType::Subtract, 1},
-            {TokenType::Multiply, 2},
-            {TokenType::Divide, 2},
+            {TokenType::Add, 1},    {TokenType::Subtract, 1},  {TokenType::Multiply, 2}, {TokenType::Divide, 2},
+            {TokenType::Equals, 3}, {TokenType::NotEquals, 3}, {TokenType::LessThan, 3}, {TokenType::GreaterThan, 3},
+            {TokenType::And, 4},    {TokenType::Or, 4},
         };
         std::unique_ptr<Expr> lhs;
         Token left = consume();
@@ -215,6 +214,10 @@ class Scanner {
             }
             case TokenType::Boolean: {
                 lhs = makeExpr<LiteralExpr>(LiteralExpr::Type::Boolean, left.text);
+                break;
+            }
+            case TokenType::String: {
+                lhs = makeExpr<LiteralExpr>(LiteralExpr::Type::String, left.text);
                 break;
             }
             case TokenType::LeftParen: {
@@ -235,9 +238,6 @@ class Scanner {
                 // TODO: Handle function calls inside expressions
                 throw std::runtime_error("Function calls inside expressions are not implemented");
             }
-                // TODO: Implement string operations
-                // case TokenType::String:
-                //     type = LiteralExpr::Type::String;
             default:
                 throw std::runtime_error("Invalid token");
         }
