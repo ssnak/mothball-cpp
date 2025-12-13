@@ -364,6 +364,30 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         }
         return std::nullopt;
     }
+    if (identifier == "setx") {
+        if (args.size() > 0) {
+            std::visit(overloaded{[this](int offset) { m_player.position.x = static_cast<float>(offset); },
+                                  [this](float offset) { m_player.position.x = offset; },
+                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                       args[0]);
+        } else {
+            m_player.position.x = 0.0f;
+        }
+        return std::nullopt;
+    }
+    if (identifier == "setz") {
+        if (args.size() > 0) {
+            std::visit(overloaded{[this](int offset) { m_player.position.z = static_cast<float>(offset); },
+                                  [this](float offset) { m_player.position.z = offset; },
+                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                       args[0]);
+        } else {
+            m_player.position.z = 0.0f;
+        }
+        return std::nullopt;
+    }
     if (identifier == "print") {
         if (args.size() > 0) {
             for (auto& arg : args) {
