@@ -270,10 +270,7 @@ class Scanner {
         Token token = peek();
         while (argumentsLeft == -1 || argumentsLeft > 0) {
             switch (token.type) {
-                case TokenType::String: {
-                    callExpr.arguments.push_back(makeExpr<LiteralExpr>(LiteralExpr::Type::String, consume().text));
-                    break;
-                }
+                case TokenType::String:
                 case TokenType::Identifier:
                 case TokenType::Float:
                 case TokenType::Integer:
