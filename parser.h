@@ -197,18 +197,18 @@ class Scanner {
     int getPrec() { return 0; }
     std::unique_ptr<Expr> prattParse(int mininumPrecedence = 0) {
         const std::unordered_map<TokenType, int> precedence = {
-            {TokenType::Add, 1},
-            {TokenType::Subtract, 1},
-            {TokenType::Multiply, 2},
-            {TokenType::Divide, 2},
+            {TokenType::Or, 1},
+            {TokenType::And, 2},
             {TokenType::Equals, 3},
             {TokenType::NotEquals, 3},
-            {TokenType::LessThan, 3},
-            {TokenType::GreaterThan, 3},
-            {TokenType::LessThanOrEquals, 3},
-            {TokenType::GreaterThanOrEquals, 3},
-            {TokenType::And, 4},
-            {TokenType::Or, 4},
+            {TokenType::LessThan, 4},
+            {TokenType::GreaterThan, 4},
+            {TokenType::LessThanOrEquals, 4},
+            {TokenType::GreaterThanOrEquals, 4},
+            {TokenType::Add, 5},
+            {TokenType::Subtract, 5},
+            {TokenType::Multiply, 6},
+            {TokenType::Divide, 6},
         };
         std::unique_ptr<Expr> lhs;
         Token left = consume();
