@@ -81,6 +81,18 @@ OptionalValue CodeVisitor::visitLiteralExpr(LiteralExpr& expr) {
 }
 
 OptionalValue CodeVisitor::visitVarExpr(VarExpr& expr) {
+    if (expr.identifier == "x") {
+        return static_cast<float>(m_player.position.x);
+    }
+    if (expr.identifier == "z") {
+        return static_cast<float>(m_player.position.z);
+    }
+    if (expr.identifier == "vx") {
+        return static_cast<float>(m_player.velocity.x);
+    }
+    if (expr.identifier == "vz") {
+        return static_cast<float>(m_player.velocity.z);
+    }
     for (int i = m_variables.size() - 1; i >= 0; i--) {
         if (m_variables[i].identifier == expr.identifier) {
             return m_variables[i].value;
@@ -91,6 +103,29 @@ OptionalValue CodeVisitor::visitVarExpr(VarExpr& expr) {
 }
 
 OptionalValue CodeVisitor::visitAssignExpr(AssignExpr& expr) {
+    double* ref = nullptr;
+    if (expr.identifier == "x") {
+        ref = &m_player.position.x;
+    }
+    if (expr.identifier == "z") {
+        ref = &m_player.position.z;
+    }
+    if (expr.identifier == "vx") {
+        ref = &m_player.velocity.x;
+    }
+    if (expr.identifier == "vz") {
+        ref = &m_player.velocity.z;
+    }
+    if (ref != nullptr) {
+        return static_cast<float>(*ref =
+                                      std::visit(overloaded{[](float value) { return value; },
+                                                            [](int value) { return static_cast<float>(value); },
+                                                            [](auto) {
+                                                                throw std::runtime_error("Invalid value for variable");
+                                                                return 0.0f;
+                                                            }},
+                                                 expr.value->accept(*this).value()));
+    }
     for (int i = m_variables.size() - 1; i >= 0; i--) {
         if (m_variables[i].identifier == expr.identifier) {
             return m_variables[i].value = expr.value->accept(*this).value();
