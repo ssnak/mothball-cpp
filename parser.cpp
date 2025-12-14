@@ -12,6 +12,7 @@ void ForStmt::accept(struct StmtVisitor& visitor) { visitor.visitForStmt(*this);
 void VarDeclStmt::accept(struct StmtVisitor& visitor) { visitor.visitVarDeclStmt(*this); }
 OptionalValue LiteralExpr::accept(struct ExprVisitor& visitor) { return visitor.visitLiteralExpr(*this); }
 OptionalValue VarExpr::accept(struct ExprVisitor& visitor) { return visitor.visitVarExpr(*this); }
+OptionalValue AssignExpr::accept(struct ExprVisitor& visitor) { return visitor.visitAssignExpr(*this); }
 OptionalValue UnaryExpr::accept(struct ExprVisitor& visitor) { return visitor.visitUnaryExpr(*this); }
 OptionalValue BinaryExpr::accept(struct ExprVisitor& visitor) { return visitor.visitBinaryExpr(*this); }
 OptionalValue CallExpr::accept(struct ExprVisitor& visitor) { return visitor.visitCallExpr(*this); }
@@ -72,6 +73,16 @@ OptionalValue CodeVisitor::visitVarExpr(VarExpr& expr) {
         }
     }
     std::cerr << "Variable not recognized" << std::endl;
+    return std::nullopt;
+}
+
+OptionalValue CodeVisitor::visitAssignExpr(AssignExpr& expr) {
+    for (int i = m_variables.size() - 1; i >= 0; i--) {
+        if (m_variables[i].identifier == expr.identifier) {
+            return m_variables[i].value = expr.value->accept(*this).value();
+        }
+    }
+    std::cerr << "Undefined variable" << std::endl;
     return std::nullopt;
 }
 

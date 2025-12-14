@@ -33,6 +33,13 @@ struct VarExpr : public Expr {
     VarExpr(std::string identifier) : identifier(identifier) {}
 };
 
+struct AssignExpr : public Expr {
+    std::string identifier;
+    std::unique_ptr<Expr> value;
+    OptionalValue accept(struct ExprVisitor& visitor) override;
+    AssignExpr(std::string identifier, std::unique_ptr<Expr> value) : identifier(identifier), value(std::move(value)) {}
+};
+
 struct CallExpr : public Expr {
    public:
     std::string identifier;
@@ -65,6 +72,7 @@ struct BinaryExpr : public Expr {
 struct ExprVisitor {
     virtual OptionalValue visitLiteralExpr(LiteralExpr& expr) = 0;
     virtual OptionalValue visitVarExpr(VarExpr& expr) = 0;
+    virtual OptionalValue visitAssignExpr(AssignExpr& expr) = 0;
     virtual OptionalValue visitUnaryExpr(UnaryExpr& expr) = 0;
     virtual OptionalValue visitBinaryExpr(BinaryExpr& expr) = 0;
     virtual OptionalValue visitCallExpr(CallExpr& expr) = 0;
@@ -78,6 +86,7 @@ struct Stmt {
 struct ExprStmt : public Stmt {
     std::unique_ptr<Expr> expression;
     void accept(struct StmtVisitor& visitor) override;
+    ExprStmt() = default;
     ExprStmt(std::unique_ptr<Expr> expression) : expression(std::move(expression)) {}
 };
 
@@ -137,6 +146,7 @@ struct CodeVisitor : public ExprVisitor, public StmtVisitor {
    public:
     OptionalValue visitLiteralExpr(LiteralExpr& expr) override;
     OptionalValue visitVarExpr(VarExpr& expr) override;
+    OptionalValue visitAssignExpr(AssignExpr& expr) override;
     OptionalValue visitUnaryExpr(UnaryExpr& expr) override;
     OptionalValue visitBinaryExpr(BinaryExpr& expr) override;
     OptionalValue visitCallExpr(CallExpr& expr) override;
@@ -196,6 +206,7 @@ class Scanner {
     }
     int getPrec() { return 0; }
     std::unique_ptr<Expr> prattParse(int mininumPrecedence = 0) {
+        // Increasing order of precedence
         const std::unordered_map<TokenType, int> precedence = {
             {TokenType::Or, 1},
             {TokenType::And, 2},
@@ -241,6 +252,9 @@ class Scanner {
             case TokenType::Identifier: {
                 if (isFunction(left)) {
                     lhs = createCallExpr();
+                } else if (peek().type == TokenType::Assign) {
+                    consume();
+                    lhs = makeExpr<AssignExpr>(left.text, prattParse());
                 } else {
                     lhs = makeExpr<VarExpr>(left.text);
                 }
