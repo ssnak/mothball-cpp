@@ -127,7 +127,7 @@ struct FuncDeclStmt : public Stmt {
 struct StmtVisitor {
     virtual void visitExprStmt(ExprStmt& stmt) = 0;
     virtual void visitBlockStmt(BlockStmt& stmt) = 0;
-    // virtual void visitIfStmt() = 0;
+    virtual void visitIfStmt(IfStmt& stmt) = 0;
     virtual void visitForStmt(ForStmt& stmt) = 0;
     // virtual void visitWhileStmt() = 0;
     virtual void visitVarDeclStmt(VarDeclStmt& stmt) = 0;
@@ -153,6 +153,7 @@ struct CodeVisitor : public ExprVisitor, public StmtVisitor {
 
     void visitExprStmt(ExprStmt& stmt) override;
     void visitBlockStmt(BlockStmt& stmt) override;
+    void visitIfStmt(IfStmt& stmt) override;
     void visitForStmt(ForStmt& stmt) override;
     void visitVarDeclStmt(VarDeclStmt& stmt) override;
 };
@@ -350,6 +351,19 @@ class Scanner {
                 consume();
                 forStmt.body = parseStmt();
                 return std::make_unique<ForStmt>(std::move(forStmt));
+                break;
+            }
+            case TokenType::If: {
+                IfStmt ifStmt;
+                ifStmt.condition = prattParse();
+                consume();
+                ifStmt.thenBranch = parseStmt();
+                if (peek().type == TokenType::Else) {
+                    consume();
+                    consume();
+                    ifStmt.elseBranch = parseStmt();
+                }
+                return std::make_unique<IfStmt>(std::move(ifStmt));
                 break;
             }
             case TokenType::LeftBrace: {

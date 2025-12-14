@@ -8,6 +8,7 @@
 
 void BlockStmt::accept(struct StmtVisitor& visitor) { visitor.visitBlockStmt(*this); }
 void ExprStmt::accept(struct StmtVisitor& visitor) { visitor.visitExprStmt(*this); }
+void IfStmt::accept(struct StmtVisitor& visitor) { visitor.visitIfStmt(*this); }
 void ForStmt::accept(struct StmtVisitor& visitor) { visitor.visitForStmt(*this); }
 void VarDeclStmt::accept(struct StmtVisitor& visitor) { visitor.visitVarDeclStmt(*this); }
 OptionalValue LiteralExpr::accept(struct ExprVisitor& visitor) { return visitor.visitLiteralExpr(*this); }
@@ -30,6 +31,19 @@ void CodeVisitor::visitBlockStmt(BlockStmt& stmt) {
         it.get()->accept(*this);
     }
     m_variables.resize(variablesSize);
+}
+void CodeVisitor::visitIfStmt(IfStmt& stmt) {
+    bool condition = std::visit(overloaded{[](bool condition) { return condition; },
+                                           [](auto) {
+                                               throw std::runtime_error("Invalid condition for if statement");
+                                               return false;
+                                           }},
+                                stmt.condition->accept(*this).value());
+    if (condition) {
+        stmt.thenBranch->accept(*this);
+    } else {
+        if (stmt.elseBranch) stmt.elseBranch->accept(*this);
+    }
 }
 void CodeVisitor::visitForStmt(ForStmt& stmt) {
     int times = 0;

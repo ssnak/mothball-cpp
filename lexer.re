@@ -30,6 +30,7 @@ loop:
         @start "for"           { return Token(TokenType::For, s_token); }
         @start "while"         { return Token(TokenType::While, s_token); }
         @start "if"            { return Token(TokenType::If, s_token); }
+        @start "else"            { return Token(TokenType::Else, s_token); }
         @start boolean         { return Token(TokenType::Boolean, s_token); }
         @start "=="            { return Token(TokenType::Equals, s_token); }
         @start "!="            { return Token(TokenType::NotEquals, s_token); }
