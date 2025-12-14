@@ -370,8 +370,11 @@ class Scanner {
                 return std::make_unique<BlockStmt>(scan());
             }
             case TokenType::Semicolon: {
-                consume();
+                if (consume().type == TokenType::RightBrace) consume();
                 return parseStmt();
+            }
+            case TokenType::EndOfFile: {
+                return std::unique_ptr<Stmt>();
             }
             default:
                 break;
@@ -383,7 +386,12 @@ class Scanner {
     BlockStmt scan() {
         BlockStmt block;
         while (consume().type != TokenType::EndOfFile && current().type != TokenType::RightBrace) {
-            block.statements.push_back(parseStmt());
+            std::unique_ptr<Stmt> stmt = parseStmt();
+            if (stmt) {
+                block.statements.push_back(std::move(stmt));
+            } else {
+                return block;
+            }
         }
         return block;
     }
