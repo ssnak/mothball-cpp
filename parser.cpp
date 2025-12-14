@@ -463,6 +463,30 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         }
         return std::nullopt;
     }
+    if (identifier == "setvx") {
+        if (args.size() > 0) {
+            std::visit(overloaded{[this](int offset) { m_player.velocity.x = static_cast<float>(offset); },
+                                  [this](float offset) { m_player.velocity.x = offset; },
+                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                       args[0]);
+        } else {
+            m_player.velocity.x = 0.0f;
+        }
+        return std::nullopt;
+    }
+    if (identifier == "setvz") {
+        if (args.size() > 0) {
+            std::visit(overloaded{[this](int offset) { m_player.velocity.z = static_cast<float>(offset); },
+                                  [this](float offset) { m_player.velocity.z = offset; },
+                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
+                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                       args[0]);
+        } else {
+            m_player.velocity.z = 0.0f;
+        }
+        return std::nullopt;
+    }
     if (identifier == "print") {
         if (args.size() > 0) {
             for (auto& arg : args) {
