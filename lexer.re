@@ -47,13 +47,14 @@ loop:
         "-"                    { return Token(TokenType::Subtract, c_token); }
         "*"                    { return Token(TokenType::Multiply, c_token); }
         "/"                    { return Token(TokenType::Divide, c_token); }
+        ";"                    { return Token(TokenType::Semicolon, c_token); }
         @start builtin         { return Token(TokenType::Builtin, s_token); }
         @start movement        { return Token(TokenType::Movement, s_token); }
         @start identifier      { return Token(TokenType::Identifier, s_token); }
         @start modifier        { return Token(TokenType::Modifier, s_token); }
         @start number          { return Token(TokenType::Integer, s_token); }
         @start number"."number { return Token(TokenType::Float, s_token); }
-        [ \t\n\r;"\\"]+        { goto loop; }
+        [ \t\n\r"\\"]+         { goto loop; }
         *                      { return Token(TokenType::Unknown, "UNKNOWN"); }
         $                      { return Token(TokenType::EndOfFile, "EOF"); }
     */

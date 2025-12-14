@@ -31,6 +31,7 @@ enum class TokenType {
     And,
     Or,
     Assign,
+    Semicolon,
     EndOfFile,
     Unknown,
 };

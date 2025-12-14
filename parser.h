@@ -327,6 +327,7 @@ class Scanner {
                 if (isFunction(current())) {
                     exprStmt = createCallExpr();
                 } else {
+                    m_pos--;
                     exprStmt = prattParse();
                 }
                 return std::make_unique<ExprStmt>(std::move(exprStmt));
@@ -353,6 +354,10 @@ class Scanner {
             }
             case TokenType::LeftBrace: {
                 return std::make_unique<BlockStmt>(scan());
+            }
+            case TokenType::Semicolon: {
+                consume();
+                return parseStmt();
             }
             default:
                 break;
