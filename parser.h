@@ -304,43 +304,53 @@ class Scanner {
         return false;
     }
 
+    std::unique_ptr<Stmt> parseStmt() {
+        switch (current().type) {
+            case TokenType::Builtin:
+            case TokenType::Movement:
+            case TokenType::Identifier: {
+                ExprStmt exprStmt;
+                if (isFunction(current())) {
+                    exprStmt = createCallExpr();
+                } else {
+                    exprStmt = prattParse();
+                }
+                return std::make_unique<ExprStmt>(std::move(exprStmt));
+                break;
+            }
+            case TokenType::Let: {
+                Token token = consume();
+                if (token.type != TokenType::Identifier) throw std::runtime_error("Invalid variable name");
+
+                VarDeclStmt varDecl;
+                varDecl.identifier = token.text;
+                if (consume().type != TokenType::Assign) throw std::runtime_error("Expected =");
+                varDecl.value = prattParse();
+                return std::make_unique<VarDeclStmt>(std::move(varDecl));
+                break;
+            }
+            case TokenType::For: {
+                ForStmt forStmt;
+                forStmt.condition = prattParse();
+                consume();
+                forStmt.body = parseStmt();
+                return std::make_unique<ForStmt>(std::move(forStmt));
+                break;
+            }
+            case TokenType::LeftBrace: {
+                return std::make_unique<BlockStmt>(scan());
+            }
+            default:
+                break;
+        }
+        throw std::runtime_error("Error while parsing statement");
+    }
+
    public:
     BlockStmt scan() {
         BlockStmt block;
         while (consume().type != TokenType::EndOfFile && current().type != TokenType::RightBrace) {
-            switch (current().type) {
-                case TokenType::Builtin:
-                case TokenType::Movement:
-                case TokenType::Identifier: {
-                    if (isFunction(current())) {
-                        ExprStmt exprStmt = createCallExpr();
-                        block.statements.push_back(std::make_unique<ExprStmt>(std::move(exprStmt)));
-                    }
-                    break;
-                    // variable asignment etc
-                }
-                case TokenType::Let: {
-                    Token token = consume();
-                    if (token.type != TokenType::Identifier) throw std::runtime_error("Invalid variable name");
-
-                    VarDeclStmt varDecl;
-                    varDecl.identifier = token.text;
-                    if (consume().type != TokenType::Assign) throw std::runtime_error("Expected =");
-                    varDecl.value = prattParse();
-                    block.statements.push_back(std::make_unique<VarDeclStmt>(std::move(varDecl)));
-                    break;
-                }
-                case TokenType::For: {
-                    ForStmt forStmt;
-                    forStmt.condition = prattParse();
-                    if (consume().type != TokenType::LeftBrace) throw std::runtime_error("Expected {");
-                    forStmt.body = std::make_unique<BlockStmt>(scan());
-                    block.statements.push_back(std::make_unique<ForStmt>(std::move(forStmt)));
-                    break;
-                }
-                default:
-                    break;
-            }
+            block.statements.push_back(parseStmt());
         }
         return block;
     }
