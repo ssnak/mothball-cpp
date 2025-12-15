@@ -121,6 +121,9 @@ struct VarDeclStmt : public Stmt {
 };
 
 struct FuncDeclStmt : public Stmt {
+    std::string identifier;
+    std::vector<std::string> parameters;
+    std::unique_ptr<Stmt> body;
     void accept(struct StmtVisitor& visitor) override;
 };
 
@@ -131,7 +134,7 @@ struct StmtVisitor {
     virtual void visitForStmt(ForStmt& stmt) = 0;
     virtual void visitWhileStmt(WhileStmt& stmt) = 0;
     virtual void visitVarDeclStmt(VarDeclStmt& stmt) = 0;
-    // virtual void visitFuncDeclStmt() = 0;
+    virtual void visitFuncDeclStmt(FuncDeclStmt& stmt) = 0;
 };
 
 struct CodeVisitor : public ExprVisitor, public StmtVisitor {
@@ -141,6 +144,7 @@ struct CodeVisitor : public ExprVisitor, public StmtVisitor {
         OptionalValue value;
     };
     std::vector<Var> m_variables;
+    std::vector<FuncDeclStmt> m_functions;
     Player m_player;
 
    public:
@@ -157,6 +161,7 @@ struct CodeVisitor : public ExprVisitor, public StmtVisitor {
     void visitForStmt(ForStmt& stmt) override;
     void visitWhileStmt(WhileStmt& stmt) override;
     void visitVarDeclStmt(VarDeclStmt& stmt) override;
+    void visitFuncDeclStmt(FuncDeclStmt& stmt) override;
 };
 
 class Scanner {
@@ -343,6 +348,22 @@ class Scanner {
                 if (consume().type != TokenType::Assign) throw std::runtime_error("Expected =");
                 varDecl.value = prattParse();
                 return std::make_unique<VarDeclStmt>(std::move(varDecl));
+            }
+            case TokenType::FuncDecl: {
+                Token token = consume();
+                if (token.type != TokenType::Identifier) throw std::runtime_error("Invalid function name");
+
+                FuncDeclStmt funcDecl;
+                funcDecl.identifier = token.text;
+
+                token = consume();
+                if (token.type != TokenType::LeftParen) throw std::runtime_error("Expected (");
+                while (consume().type == TokenType::Identifier) funcDecl.parameters.push_back(current().text);
+                if (consume().type == TokenType::RightParen) consume();
+
+                funcDecl.body = parseStmt();
+                m_functions.push_back(FunctionData{funcDecl.identifier, funcDecl.parameters.size()});
+                return std::make_unique<FuncDeclStmt>(std::move(funcDecl));
             }
             case TokenType::For: {
                 ForStmt forStmt;

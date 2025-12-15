@@ -18,6 +18,7 @@ enum class TokenType {
     Divide,
     Subtract,
     Let,
+    FuncDecl,
     For,
     While,
     If,

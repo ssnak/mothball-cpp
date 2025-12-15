@@ -12,6 +12,7 @@ void IfStmt::accept(struct StmtVisitor& visitor) { visitor.visitIfStmt(*this); }
 void ForStmt::accept(struct StmtVisitor& visitor) { visitor.visitForStmt(*this); }
 void WhileStmt::accept(struct StmtVisitor& visitor) { visitor.visitWhileStmt(*this); }
 void VarDeclStmt::accept(struct StmtVisitor& visitor) { visitor.visitVarDeclStmt(*this); }
+void FuncDeclStmt::accept(struct StmtVisitor& visitor) { visitor.visitFuncDeclStmt(*this); }
 OptionalValue LiteralExpr::accept(struct ExprVisitor& visitor) { return visitor.visitLiteralExpr(*this); }
 OptionalValue VarExpr::accept(struct ExprVisitor& visitor) { return visitor.visitVarExpr(*this); }
 OptionalValue AssignExpr::accept(struct ExprVisitor& visitor) { return visitor.visitAssignExpr(*this); }
@@ -72,6 +73,7 @@ void CodeVisitor::visitWhileStmt(WhileStmt& stmt) {
 void CodeVisitor::visitVarDeclStmt(VarDeclStmt& stmt) {
     m_variables.push_back(Var{stmt.identifier, stmt.value->accept(*this)});
 }
+void CodeVisitor::visitFuncDeclStmt(FuncDeclStmt& stmt) { m_functions.push_back(std::move(stmt)); };
 
 bool stringCheck(std::string& str, std::string sub) {
     if (str.starts_with(sub)) {
@@ -283,6 +285,18 @@ OptionalValue CodeVisitor::visitBinaryExpr(BinaryExpr& expr) {
 
 OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
     std::string identifier{expr.identifier};
+
+    for (auto& func : m_functions) {
+        if (func.identifier == identifier) {
+            size_t variablesSize = m_variables.size();
+            if (expr.arguments.size() < func.parameters.size()) throw std::runtime_error("Not enough arguments");
+            for (size_t i = 0; i < func.parameters.size(); i++)
+                m_variables.push_back(Var(func.parameters[i], expr.arguments[i]->accept(*this).value()));
+            func.body->accept(*this);
+            m_variables.resize(variablesSize);
+            return std::nullopt;
+        }
+    }
     if (identifier == "|") {
         m_player.position.x = 0.0f;
         m_player.position.z = 0.0f;
