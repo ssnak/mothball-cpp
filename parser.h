@@ -359,7 +359,9 @@ class Scanner {
                 token = consume();
                 if (token.type != TokenType::LeftParen) throw std::runtime_error("Expected (");
                 while (consume().type == TokenType::Identifier) funcDecl.parameters.push_back(current().text);
-                if (consume().type == TokenType::RightParen) consume();
+                if (current().type == TokenType::RightParen) consume();
+                if (current().type == TokenType::Movement || current().type == TokenType::Builtin)
+                    throw std::runtime_error("Can't override builtin functions");
 
                 funcDecl.body = parseStmt();
                 m_functions.push_back(FunctionData{funcDecl.identifier, funcDecl.parameters.size()});
@@ -404,7 +406,7 @@ class Scanner {
             default:
                 break;
         }
-        throw std::runtime_error("Error while parsing statement");
+        throw std::runtime_error("Error while parsing statement: " + current().text);
     }
 
    public:
