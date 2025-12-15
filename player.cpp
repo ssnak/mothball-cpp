@@ -117,9 +117,8 @@ void Player::update(bool overrideRotation, float rotationOffset, bool isSprintin
 }
 
 std::ostream& operator<<(std::ostream& os, const Player& p) {
-    os << "Velocity: (" << std::setprecision(p.precision) << p.velocity.x << ", " << std::setprecision(p.precision)
-       << p.velocity.z << ")" << std::endl
-       << "Position: (" << std::setprecision(p.precision) << p.position.x << ", " << std::setprecision(p.precision)
-       << p.position.z << ")" << std::endl;
+    os << "Velocity: (" << std::fixed << std::setprecision(p.precision) << p.velocity.x << ", " << p.velocity.z << ")"
+       << std::endl
+       << "Position: (" << p.position.x << ", " << p.position.z << ")" << std::endl;
     return os;
 }
