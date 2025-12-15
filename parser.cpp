@@ -10,6 +10,7 @@ void BlockStmt::accept(struct StmtVisitor& visitor) { visitor.visitBlockStmt(*th
 void ExprStmt::accept(struct StmtVisitor& visitor) { visitor.visitExprStmt(*this); }
 void IfStmt::accept(struct StmtVisitor& visitor) { visitor.visitIfStmt(*this); }
 void ForStmt::accept(struct StmtVisitor& visitor) { visitor.visitForStmt(*this); }
+void WhileStmt::accept(struct StmtVisitor& visitor) { visitor.visitWhileStmt(*this); }
 void VarDeclStmt::accept(struct StmtVisitor& visitor) { visitor.visitVarDeclStmt(*this); }
 OptionalValue LiteralExpr::accept(struct ExprVisitor& visitor) { return visitor.visitLiteralExpr(*this); }
 OptionalValue VarExpr::accept(struct ExprVisitor& visitor) { return visitor.visitVarExpr(*this); }
@@ -55,6 +56,19 @@ void CodeVisitor::visitForStmt(ForStmt& stmt) {
         stmt.body->accept(*this);
     }
 }
+void CodeVisitor::visitWhileStmt(WhileStmt& stmt) {
+    auto getCondition = [this, &stmt]() {
+        return std::visit(overloaded{[](bool condition) { return condition; },
+                                     [](auto) {
+                                         throw std::runtime_error("Invalid condition for while statement");
+                                         return false;
+                                     }},
+                          stmt.condition->accept(*this).value());
+    };
+    while (getCondition()) {
+        stmt.body->accept(*this);
+    }
+};
 void CodeVisitor::visitVarDeclStmt(VarDeclStmt& stmt) {
     m_variables.push_back(Var{stmt.identifier, stmt.value->accept(*this)});
 }

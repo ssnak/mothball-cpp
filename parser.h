@@ -129,7 +129,7 @@ struct StmtVisitor {
     virtual void visitBlockStmt(BlockStmt& stmt) = 0;
     virtual void visitIfStmt(IfStmt& stmt) = 0;
     virtual void visitForStmt(ForStmt& stmt) = 0;
-    // virtual void visitWhileStmt() = 0;
+    virtual void visitWhileStmt(WhileStmt& stmt) = 0;
     virtual void visitVarDeclStmt(VarDeclStmt& stmt) = 0;
     // virtual void visitFuncDeclStmt() = 0;
 };
@@ -155,6 +155,7 @@ struct CodeVisitor : public ExprVisitor, public StmtVisitor {
     void visitBlockStmt(BlockStmt& stmt) override;
     void visitIfStmt(IfStmt& stmt) override;
     void visitForStmt(ForStmt& stmt) override;
+    void visitWhileStmt(WhileStmt& stmt) override;
     void visitVarDeclStmt(VarDeclStmt& stmt) override;
 };
 
@@ -332,7 +333,6 @@ class Scanner {
                     exprStmt = prattParse();
                 }
                 return std::make_unique<ExprStmt>(std::move(exprStmt));
-                break;
             }
             case TokenType::Let: {
                 Token token = consume();
@@ -343,7 +343,6 @@ class Scanner {
                 if (consume().type != TokenType::Assign) throw std::runtime_error("Expected =");
                 varDecl.value = prattParse();
                 return std::make_unique<VarDeclStmt>(std::move(varDecl));
-                break;
             }
             case TokenType::For: {
                 ForStmt forStmt;
@@ -351,7 +350,13 @@ class Scanner {
                 consume();
                 forStmt.body = parseStmt();
                 return std::make_unique<ForStmt>(std::move(forStmt));
-                break;
+            }
+            case TokenType::While: {
+                WhileStmt whileStmt;
+                whileStmt.condition = prattParse();
+                consume();
+                whileStmt.body = parseStmt();
+                return std::make_unique<WhileStmt>(std::move(whileStmt));
             }
             case TokenType::If: {
                 IfStmt ifStmt;
@@ -364,7 +369,6 @@ class Scanner {
                     ifStmt.elseBranch = parseStmt();
                 }
                 return std::make_unique<IfStmt>(std::move(ifStmt));
-                break;
             }
             case TokenType::LeftBrace: {
                 return std::make_unique<BlockStmt>(scan());
