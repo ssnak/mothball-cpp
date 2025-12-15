@@ -292,6 +292,7 @@ class Scanner {
         while (argumentsLeft == -1 || argumentsLeft > 0) {
             switch (token.type) {
                 case TokenType::String:
+                case TokenType::Boolean:
                 case TokenType::Identifier:
                 case TokenType::Float:
                 case TokenType::Integer:
