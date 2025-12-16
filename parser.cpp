@@ -29,9 +29,12 @@ overloaded(Ts...) -> overloaded<Ts...>;
 void CodeVisitor::visitExprStmt(ExprStmt& stmt) { stmt.expression->accept(*this); }
 void CodeVisitor::visitBlockStmt(BlockStmt& stmt) {
     size_t variablesSize = m_variables.size();
+    bool prevTap = m_tap;
+    m_tap = stmt.tap;
     for (const auto& it : stmt.statements) {
         it.get()->accept(*this);
     }
+    m_tap = prevTap;
     m_variables.resize(variablesSize);
 }
 void CodeVisitor::visitIfStmt(IfStmt& stmt) {
@@ -629,7 +632,19 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                               [](std::string) { std::cerr << "Expected int got string instead" << std::endl; }},
                    args[1]);
     }
-    if (offset == 45.0f && state == State::JUMPING) {
+    if (m_tap) {
+        for (int i = 0; i < duration; i++) {
+            std::string inputs = m_player.inputs;
+            m_player.move(1, rotation, offset, slipperiness, isSprinting, isSneaking, std::nullopt, std::nullopt,
+                          state);
+            m_player.inputs = "";
+            while (m_player.velocity.sqrMagnitude() > 0.0) {
+                m_player.move(1, rotation, offset, slipperiness, isSprinting, isSneaking, std::nullopt, std::nullopt,
+                              state);
+            }
+            m_player.inputs = inputs;
+        }
+    } else if (offset == 45.0f && state == State::JUMPING && isSprinting) {
         m_player.move(1, rotation, 0.0f, slipperiness, isSprinting, isSneaking, std::nullopt, std::nullopt, state);
         m_player.move(duration - 1, rotation, offset, 1.0f, isSprinting, isSneaking, std::nullopt, std::nullopt,
                       State::AIRBORNE);

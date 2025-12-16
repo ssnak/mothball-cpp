@@ -92,6 +92,7 @@ struct ExprStmt : public Stmt {
 
 struct BlockStmt : public Stmt {
     std::vector<std::unique_ptr<Stmt>> statements;
+    bool tap = false;
     void accept(struct StmtVisitor& visitor) override;
 };
 
@@ -143,6 +144,7 @@ struct CodeVisitor : public ExprVisitor, public StmtVisitor {
         std::string identifier;
         OptionalValue value;
     };
+    bool m_tap = false;
     std::vector<Var> m_variables;
     std::vector<FuncDeclStmt> m_functions;
     Player m_player;
@@ -393,6 +395,12 @@ class Scanner {
                     ifStmt.elseBranch = parseStmt();
                 }
                 return std::make_unique<IfStmt>(std::move(ifStmt));
+            }
+            case TokenType::Tap: {
+                if (peek().type == TokenType::LeftBrace) consume();
+                BlockStmt stmt = scan();
+                stmt.tap = true;
+                return std::make_unique<BlockStmt>(std::move(stmt));
             }
             case TokenType::LeftBrace: {
                 return std::make_unique<BlockStmt>(scan());

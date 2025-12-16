@@ -35,6 +35,7 @@ enum class TokenType {
     Assign,
     Semicolon,
     EndOfFile,
+    Tap,
     Unknown,
 };
 

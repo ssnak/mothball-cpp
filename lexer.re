@@ -51,6 +51,7 @@ loop:
         "*"                    { return Token(TokenType::Multiply, c_token); }
         "/"                    { return Token(TokenType::Divide, c_token); }
         ";"                    { return Token(TokenType::Semicolon, c_token); }
+        @start "tap"           { return Token(TokenType::Tap, s_token); }
         @start builtin         { return Token(TokenType::Builtin, s_token); }
         @start movement        { return Token(TokenType::Movement, s_token); }
         @start identifier      { return Token(TokenType::Identifier, s_token); }
