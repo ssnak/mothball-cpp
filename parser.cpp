@@ -1,8 +1,10 @@
 #include "parser.h"
 
+#include <exception>
 #include <iomanip>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <variant>
 
@@ -32,7 +34,11 @@ void CodeVisitor::visitBlockStmt(BlockStmt& stmt) {
     bool prevTap = m_tap;
     m_tap = stmt.tap;
     for (const auto& it : stmt.statements) {
-        it.get()->accept(*this);
+        try {
+            it.get()->accept(*this);
+        } catch (std::exception& e) {
+            std::cerr << "\033[31m" << "ERROR: " << e.what() << "\033[0m" << std::endl;
+        }
     }
     m_tap = prevTap;
     m_variables.resize(variablesSize);
@@ -117,7 +123,7 @@ OptionalValue CodeVisitor::visitVarExpr(VarExpr& expr) {
             return m_variables[i].value;
         }
     }
-    std::cerr << "Variable not recognized" << std::endl;
+    throw std::runtime_error("Variable not recognized");
     return std::nullopt;
 }
 
@@ -150,7 +156,7 @@ OptionalValue CodeVisitor::visitAssignExpr(AssignExpr& expr) {
             return m_variables[i].value = expr.value->accept(*this).value();
         }
     }
-    std::cerr << "Undefined variable" << std::endl;
+    throw std::runtime_error("Undefined variable");
     return std::nullopt;
 }
 
@@ -312,7 +318,7 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         if (auto result = arg->accept(*this); result.has_value()) {
             args.push_back(result.value());
         } else {
-            std::cerr << "Error invalid argument" << std::endl;
+            throw std::runtime_error("Error invalid argument");
         }
     }
 
@@ -320,8 +326,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         if (args.size() > 0) {
             std::visit(overloaded{[this](int val) { m_player.face(static_cast<float>(val)); },
                                   [this](float val) { m_player.face(val); },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             m_player.face(0.0f);
@@ -341,8 +347,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                                                     << m_player.position.x - offset << std::endl;
                                       }
                                   },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             std::cout << "X: " << std::fixed << std::setprecision(m_player.precision) << m_player.position.x
@@ -363,8 +369,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                                                     << m_player.position.z - offset << std::endl;
                                       }
                                   },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             std::cout << "z: " << std::fixed << std::setprecision(m_player.precision) << m_player.position.z
@@ -393,8 +399,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                                                     << std::endl;
                                       }
                                   },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             std::cout << "x(mm): " << std::fixed << std::setprecision(m_player.precision) << pos << std::endl;
@@ -422,8 +428,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                                                     << std::endl;
                                       }
                                   },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             std::cout << "z(mm): " << std::fixed << std::setprecision(m_player.precision) << pos << std::endl;
@@ -449,8 +455,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                                                     << std::endl;
                                       }
                                   },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             std::cout << "x(b): " << std::fixed << std::setprecision(m_player.precision) << pos << std::endl;
@@ -476,8 +482,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                                                     << std::endl;
                                       }
                                   },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             std::cout << "z(b): " << std::fixed << std::setprecision(m_player.precision) << pos << std::endl;
@@ -497,8 +503,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                                                     << m_player.velocity.x - offset << std::endl;
                                       }
                                   },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             std::cout << "Vx: " << std::fixed << std::setprecision(m_player.precision) << m_player.velocity.x
@@ -519,8 +525,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
                                                     << m_player.velocity.z - offset << std::endl;
                                       }
                                   },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             std::cout << "Vz: " << std::fixed << std::setprecision(m_player.precision) << m_player.velocity.z
@@ -532,8 +538,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         if (args.size() > 0) {
             std::visit(overloaded{[this](int offset) { m_player.position.x = static_cast<float>(offset); },
                                   [this](float offset) { m_player.position.x = offset; },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             m_player.position.x = 0.0f;
@@ -544,8 +550,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         if (args.size() > 0) {
             std::visit(overloaded{[this](int offset) { m_player.position.z = static_cast<float>(offset); },
                                   [this](float offset) { m_player.position.z = offset; },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             m_player.position.z = 0.0f;
@@ -556,8 +562,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         if (args.size() > 0) {
             std::visit(overloaded{[this](int offset) { m_player.velocity.x = static_cast<float>(offset); },
                                   [this](float offset) { m_player.velocity.x = offset; },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             m_player.velocity.x = 0.0f;
@@ -568,8 +574,8 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
         if (args.size() > 0) {
             std::visit(overloaded{[this](int offset) { m_player.velocity.z = static_cast<float>(offset); },
                                   [this](float offset) { m_player.velocity.z = offset; },
-                                  [](bool) { std::cerr << "Expected float got bool instead" << std::endl; },
-                                  [](std::string) { std::cerr << "Expected float got string instead" << std::endl; }},
+                                  [](bool) { throw std::runtime_error("Expected float got bool instead"); },
+                                  [](std::string) { throw std::runtime_error("Expected float got string instead"); }},
                        args[0]);
         } else {
             m_player.velocity.z = 0.0f;
@@ -586,7 +592,7 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
             }
             std::cout << std::endl;
         } else {
-            std::cerr << "Nothing to print" << std::endl;
+            throw std::runtime_error("Nothing to print");
         }
         return std::nullopt;
     }
@@ -621,15 +627,15 @@ OptionalValue CodeVisitor::visitCallExpr(CallExpr& expr) {
     if (args.size() > 0) {
         std::visit(overloaded{[&duration](int value) { duration = value; },
                               [&duration](float value) { duration = static_cast<int>(value); },
-                              [](bool) { std::cerr << "Expected int got bool instead" << std::endl; },
-                              [](std::string) { std::cerr << "Expected int got string instead" << std::endl; }},
+                              [](bool) { throw std::runtime_error("Expected int got bool instead"); },
+                              [](std::string) { throw std::runtime_error("Expected int got string instead"); }},
                    args[0]);
     }
     if (args.size() > 1) {
         std::visit(overloaded{[&rotation](int value) { rotation = static_cast<float>(value); },
                               [&rotation](float value) { rotation = value; },
-                              [](bool) { std::cerr << "Expected int got bool instead" << std::endl; },
-                              [](std::string) { std::cerr << "Expected int got string instead" << std::endl; }},
+                              [](bool) { throw std::runtime_error("Expected int got bool instead"); },
+                              [](std::string) { throw std::runtime_error("Expected int got string instead"); }},
                    args[1]);
     }
     if (m_tap) {
